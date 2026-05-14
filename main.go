@@ -1,4 +1,4 @@
-package ion_go_v2
+package main
 
 import "fmt"
 
