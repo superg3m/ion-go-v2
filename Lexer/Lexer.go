@@ -2,7 +2,7 @@ package Lexer
 
 import (
 	"fmt"
-	"ion-go/Token"
+	"ion/go/v2/Token"
 	"os"
 	"strings"
 	"unicode"
