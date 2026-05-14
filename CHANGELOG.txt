@@ -1,0 +1,6 @@
+CHANGELOG.txt
+
+----------- Version: 0.0.0 -----------
+- Created main.go just to check if go is set up correctly
+- Set up appropriate directories
+- Pulled in Lexer.go, Parser.go, ect. From ion-go (https://github.com/superg3m/ion-go)
