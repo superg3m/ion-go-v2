@@ -15,7 +15,7 @@ func (e *ATTx64Emitter) EmitInstruction(inst AST.Instruction) []string {
 	switch v := inst.(type) {
 	case *AST.InstructionMove:
 		instructions = append(instructions, fmt.Sprintf("\tmovl %s, %s", v.Source.ToString(), v.Destination.ToString()))
-	case *AST.InstructionRet:
+	case *AST.InstructionReturn:
 		instructions = append(instructions, "\tret")
 	}
 

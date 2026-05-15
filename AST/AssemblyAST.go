@@ -32,7 +32,7 @@ type InstructionMove struct {
 	Source      Operand
 }
 
-type InstructionRet struct{}
+type InstructionReturn struct{}
 
 func (*Immediate) isOperand() {}
 func (i *Immediate) ToString() string {
@@ -43,5 +43,16 @@ func (r *Register) ToString() string {
 	return r.Name
 }
 
-func (*InstructionMove) isInstruction() {}
-func (*InstructionRet) isInstruction()  {}
+func (*InstructionMove) isInstruction()   {}
+func (*InstructionReturn) isInstruction() {}
+
+func NewMoveInstruction(destination Operand, source Operand) Instruction {
+	return &InstructionMove{
+		Destination: destination,
+		Source:      source,
+	}
+}
+
+func NewReturnInstruction() Instruction {
+	return &InstructionReturn{}
+}

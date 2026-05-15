@@ -8,8 +8,8 @@ func instructionsFromStatement(stmt AST.Statement) []AST.Instruction {
 	case *AST.StatementReturn:
 		destination := &AST.Register{Name: "%eax"}
 		source := &AST.Immediate{Value: v.Expr.(*AST.ExpressionInteger).Value}
-		instructions = append(instructions, &AST.InstructionMove{destination, source})
-		instructions = append(instructions, &AST.InstructionRet{})
+		instructions = append(instructions, AST.NewMoveInstruction(destination, source))
+		instructions = append(instructions, AST.NewReturnInstruction())
 	}
 
 	return instructions
