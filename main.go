@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"ion/go/v2/AssemblyEmitter"
 	"ion/go/v2/Codegen"
 	"ion/go/v2/Lexer"
 	"ion/go/v2/Parser"
+	"log"
+	"os"
 )
 
 func main() {
@@ -18,5 +21,20 @@ func main() {
 
 	program := Parser.ParseProgram(tokenStream)
 	assembly := Codegen.GenerateAssemblyProgram(program)
-	fmt.Println(assembly)
+
+	emitter := &AssemblyEmitter.ATTx64Emitter{}
+	instructions := emitter.EmitAssembly(assembly)
+
+	f, err := os.Create("Test/output.s")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	for _, line := range instructions {
+		_, err := f.WriteString(line + "\n")
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }

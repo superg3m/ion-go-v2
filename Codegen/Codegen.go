@@ -7,7 +7,7 @@ func instructionsFromStatement(stmt AST.Statement) []AST.Instruction {
 	switch v := stmt.(type) {
 	case *AST.StatementReturn:
 		destination := &AST.Register{Name: "%eax"}
-		source := &AST.Immediate{Immediate: v.Expr.(*AST.ExpressionInteger).Value}
+		source := &AST.Immediate{Value: v.Expr.(*AST.ExpressionInteger).Value}
 		instructions = append(instructions, &AST.InstructionMove{destination, source})
 		instructions = append(instructions, &AST.InstructionRet{})
 	}
@@ -57,7 +57,7 @@ func instructionsFromNode(node AST.SourceNode) []AST.Instruction {
 }
 
 func GenerateAssemblyProgram(program AST.Program) AST.AssemblyProgram {
-	var main AST.FunctionDefinition
+	main := &AST.FunctionDefinition{}
 	main.Identifier = "main"
 	function := program.Declarations[0].(*AST.DeclarationFunction)
 

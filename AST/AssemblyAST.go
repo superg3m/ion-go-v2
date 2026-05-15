@@ -1,15 +1,18 @@
 package AST
 
+import "fmt"
+
 type Instruction interface {
 	isInstruction()
 }
 
 type Operand interface {
 	isOperand()
+	ToString() string
 }
 
 type AssemblyProgram struct {
-	FunctionDefinition FunctionDefinition
+	FunctionDefinition *FunctionDefinition
 }
 type FunctionDefinition struct {
 	Identifier   string
@@ -17,7 +20,7 @@ type FunctionDefinition struct {
 }
 
 type Immediate struct {
-	Immediate int
+	Value int
 }
 
 type Register struct {
@@ -32,7 +35,13 @@ type InstructionMove struct {
 type InstructionRet struct{}
 
 func (*Immediate) isOperand() {}
-func (*Register) isOperand()  {}
+func (i *Immediate) ToString() string {
+	return fmt.Sprintf("$%d", i.Value)
+}
+func (*Register) isOperand() {}
+func (r *Register) ToString() string {
+	return r.Name
+}
 
 func (*InstructionMove) isInstruction() {}
 func (*InstructionRet) isInstruction()  {}
