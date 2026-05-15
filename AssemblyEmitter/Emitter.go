@@ -1,4 +1,4 @@
-package AssemblyEmission
+package AssemblyEmitter
 
 type AssemblyEmitter interface {
 }
