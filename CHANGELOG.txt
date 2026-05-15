@@ -1,5 +1,9 @@
 CHANGELOG.txt
 
+----------- Version: 0.0.1 -----------
+- Added AssemblyAST, Instructions, Operands, Codegen
+- Edited main.go to test lexer, parser, codegen
+
 ----------- Version: 0.0.0 -----------
 - Created main.go just to check if go is set up correctly
 - Set up appropriate directories
