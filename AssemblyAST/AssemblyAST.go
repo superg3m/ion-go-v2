@@ -27,6 +27,10 @@ type Register struct {
 	Name string // for now this will only be %eax
 }
 
+type Pseudo struct {
+	identifier string
+}
+
 type InstructionStackAllocate struct {
 	Value int
 }
@@ -40,6 +44,11 @@ type InstructionReturn struct {
 	Value *Immediate
 }
 
+type InstructionUnary struct {
+	operator string
+	operand  Operand
+}
+
 func (*Immediate) isOperand() {}
 func (i *Immediate) ToString() string {
 	return fmt.Sprintf("$%d", i.Value)
@@ -48,10 +57,6 @@ func (i *Immediate) ToString() string {
 func (*Register) isOperand() {}
 func (r *Register) ToString() string {
 	return r.Name
-}
-
-type Pseudo struct {
-	identifier string
 }
 
 func (*InstructionMove) isInstruction()          {}
