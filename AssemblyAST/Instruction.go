@@ -12,12 +12,12 @@ type InstructionMove struct {
 type InstructionReturn struct{}
 
 type InstructionStackAllocate struct {
-	Value int
+	AllocationSize int
 }
 
 type InstructionUnary struct {
-	operator string
-	operand  Operand
+	Operator string
+	Operand  Operand
 }
 
 func NewMoveInstruction(source Operand, destination Operand) Instruction {
@@ -31,9 +31,9 @@ func NewReturnInstruction() Instruction {
 	return &InstructionReturn{}
 }
 
-func NewStackAllocateInstruction(value int) Instruction {
+func NewStackAllocateInstruction(allocationSize int) Instruction {
 	return &InstructionStackAllocate{
-		Value: value,
+		AllocationSize: allocationSize,
 	}
 }
 

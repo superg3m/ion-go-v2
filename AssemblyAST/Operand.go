@@ -14,15 +14,19 @@ type Immediate struct {
 	Value int
 }
 
-type Register int
+type Register string
 
 const (
-	AX = Register(iota)
-	R10
+	EAX  = Register("%eax")
+	R10D = "%r10d"
 )
 
 type Pseudo struct {
 	Identifier string
+}
+
+type Stack struct {
+	Offset int
 }
 
 func NewOperand(value IR.Value) Operand {
@@ -44,6 +48,10 @@ func NewRegisterOperand(register Register) Operand {
 	return ret
 }
 
+func NewStackOperand(offset int) Operand {
+	return &Stack{Offset: offset}
+}
+
 func (*Immediate) isOperand() {}
 func (i *Immediate) ToString() string {
 	return fmt.Sprintf("$%d", i.Value)
@@ -56,5 +64,10 @@ func (r *Register) ToString() string {
 
 func (*Pseudo) isOperand() {}
 func (r *Pseudo) ToString() string {
-	return "r.Name"
+	return "PSEUDO"
+}
+
+func (*Stack) isOperand() {}
+func (r *Stack) ToString() string {
+	return fmt.Sprintf("-%d(%%rbp)", r.Offset)
 }

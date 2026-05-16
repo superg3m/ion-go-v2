@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"ion/go/v2/AssemblyAST"
 	"ion/go/v2/Codegen"
 	"ion/go/v2/IR"
 	"ion/go/v2/Lexer"
 	"ion/go/v2/Parser"
+	"slices"
 )
 
 func main() {
@@ -20,7 +22,13 @@ func main() {
 	program := Parser.ParseProgram(tokenStream)
 	ir := IR.GenerateIntermediateRepresentation(program)
 	assembly := Codegen.GenerateAssemblyProgram(ir)
-	assembly = ReplacePseudoRegisters(assembly)
+
+	finalStackOffset := 0
+	assembly, finalStackOffset = Codegen.ReplacePseudoRegisters(assembly)
+	assembly.FunctionDefinition.Instructions = slices.Insert(assembly.FunctionDefinition.Instructions, 0, AssemblyAST.NewStackAllocateInstruction(finalStackOffset))
+
+	// assembly = Codegen.ReplaceInvalidMoveInstructions(assembly, &finalStackOffset)
+
 	fmt.Println(assembly)
 	/*
 		assembly := Codegen.GenerateAssemblyProgram(program)
