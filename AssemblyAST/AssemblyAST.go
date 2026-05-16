@@ -19,12 +19,16 @@ type FunctionDefinition struct {
 	Instructions []Instruction
 }
 
-type IntegerConstant struct {
+type Immediate struct {
 	Value int
 }
 
 type Register struct {
 	Name string // for now this will only be %eax
+}
+
+type InstructionStackAllocate struct {
+	Value int
 }
 
 type InstructionMove struct {
@@ -33,11 +37,11 @@ type InstructionMove struct {
 }
 
 type InstructionReturn struct {
-	Value *IntegerConstant
+	Value *Immediate
 }
 
-func (*IntegerConstant) isOperand() {}
-func (i *IntegerConstant) ToString() string {
+func (*Immediate) isOperand() {}
+func (i *Immediate) ToString() string {
 	return fmt.Sprintf("$%d", i.Value)
 }
 
@@ -46,8 +50,13 @@ func (r *Register) ToString() string {
 	return r.Name
 }
 
-func (*InstructionMove) isInstruction()   {}
-func (*InstructionReturn) isInstruction() {}
+type Pseudo struct {
+	identifier string
+}
+
+func (*InstructionMove) isInstruction()          {}
+func (*InstructionReturn) isInstruction()        {}
+func (*InstructionStackAllocate) isInstruction() {}
 
 func NewMoveInstruction(destination Operand, source Operand) Instruction {
 	return &InstructionMove{
@@ -56,8 +65,14 @@ func NewMoveInstruction(destination Operand, source Operand) Instruction {
 	}
 }
 
-func NewReturnInstruction(value *IntegerConstant) Instruction {
+func NewReturnInstruction(value *Immediate) Instruction {
 	return &InstructionReturn{
+		Value: value,
+	}
+}
+
+func NewStackAllocateInstruction(value int) Instruction {
+	return &InstructionStackAllocate{
 		Value: value,
 	}
 }
