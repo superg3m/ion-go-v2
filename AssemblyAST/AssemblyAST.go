@@ -1,4 +1,4 @@
-package AST
+package AssemblyAST
 
 import "fmt"
 
@@ -11,7 +11,7 @@ type Operand interface {
 	ToString() string
 }
 
-type AssemblyProgram struct {
+type Program struct {
 	FunctionDefinition *FunctionDefinition
 }
 type FunctionDefinition struct {
@@ -38,6 +38,7 @@ func (*Immediate) isOperand() {}
 func (i *Immediate) ToString() string {
 	return fmt.Sprintf("$%d", i.Value)
 }
+
 func (*Register) isOperand() {}
 func (r *Register) ToString() string {
 	return r.Name

@@ -2,7 +2,7 @@ package AssemblyEmitter
 
 import (
 	"fmt"
-	"ion/go/v2/AST"
+	"ion/go/v2/AssemblyAST"
 )
 
 type ATTx64Emitter struct{}
@@ -25,19 +25,19 @@ func EmitFunctionEpilogue() []string {
 
 func (e *ATTx64Emitter) EmitReturnInstruction() {}
 
-func (e *ATTx64Emitter) EmitInstruction(inst AST.Instruction) []string {
+func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 	var instructions []string
 	switch v := inst.(type) {
-	case *AST.InstructionMove:
+	case *AssemblyAST.InstructionMove:
 		instructions = append(instructions, fmt.Sprintf("\tmovl %s, %s", v.Source.ToString(), v.Destination.ToString()))
-	case *AST.InstructionReturn:
+	case *AssemblyAST.InstructionReturn:
 		instructions = EmitFunctionEpilogue()
 	}
 
 	return instructions
 }
 
-func (e *ATTx64Emitter) EmitFunctionDefinition(functionDefinition *AST.FunctionDefinition) []string {
+func (e *ATTx64Emitter) EmitFunctionDefinition(functionDefinition *AssemblyAST.FunctionDefinition) []string {
 	instructions := []string{
 		fmt.Sprintf(".global %s", functionDefinition.Identifier),
 		fmt.Sprintf("%s:", functionDefinition.Identifier),
@@ -54,7 +54,7 @@ func (e *ATTx64Emitter) EmitFunctionDefinition(functionDefinition *AST.FunctionD
 	return instructions
 }
 
-func (e *ATTx64Emitter) EmitAssemblyProgram(program AST.AssemblyProgram) []string {
+func (e *ATTx64Emitter) EmitAssemblyProgram(program AssemblyAST.Program) []string {
 	instructions := []string{
 		".text",
 	}

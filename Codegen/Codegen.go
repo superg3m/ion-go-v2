@@ -1,21 +1,22 @@
 package Codegen
 
 import "ion/go/v2/AST"
+import "ion/go/v2/AssemblyAST"
 
-func instructionsFromStatement(stmt AST.Statement) []AST.Instruction {
-	var instructions []AST.Instruction
+func instructionsFromStatement(stmt AST.Statement) []AssemblyAST.Instruction {
+	var instructions []AssemblyAST.Instruction
 	switch v := stmt.(type) {
 	case *AST.StatementReturn:
-		destination := &AST.Register{Name: "%eax"}
-		source := &AST.Immediate{Value: v.Expr.(*AST.ExpressionInteger).Value}
-		instructions = append(instructions, AST.NewMoveInstruction(destination, source))
-		instructions = append(instructions, AST.NewReturnInstruction())
+		destination := &AssemblyAST.Register{Name: "%eax"}
+		source := &AssemblyAST.Immediate{Value: v.Expr.(*AST.ExpressionInteger).Value}
+		instructions = append(instructions, AssemblyAST.NewMoveInstruction(destination, source))
+		instructions = append(instructions, AssemblyAST.NewReturnInstruction())
 	}
 
 	return instructions
 }
 
-func instructionsFromExpression(expr AST.Expression) []AST.Instruction {
+func instructionsFromExpression(expr AST.Expression) []AssemblyAST.Instruction {
 	/*
 		var instructions []AST.Instruction
 		switch v := expr.(type) {
@@ -31,8 +32,8 @@ func instructionsFromExpression(expr AST.Expression) []AST.Instruction {
 	return nil
 }
 
-func instructionsFromDeclaration(decl AST.Declaration) []AST.Instruction {
-	var instructions []AST.Instruction
+func instructionsFromDeclaration(decl AST.Declaration) []AssemblyAST.Instruction {
+	var instructions []AssemblyAST.Instruction
 	switch v := decl.(type) {
 	case *AST.DeclarationFunction:
 		for _, node := range v.Block.Body {
@@ -43,7 +44,7 @@ func instructionsFromDeclaration(decl AST.Declaration) []AST.Instruction {
 	return instructions
 }
 
-func instructionsFromNode(node AST.SourceNode) []AST.Instruction {
+func instructionsFromNode(node AST.SourceNode) []AssemblyAST.Instruction {
 	switch v := node.(type) {
 	case AST.Statement:
 		return instructionsFromStatement(v)
@@ -56,8 +57,8 @@ func instructionsFromNode(node AST.SourceNode) []AST.Instruction {
 	return nil
 }
 
-func GenerateAssemblyProgram(program AST.Program) AST.AssemblyProgram {
-	main := &AST.FunctionDefinition{}
+func GenerateAssemblyProgram(program AST.Program) AssemblyAST.Program {
+	main := &AssemblyAST.FunctionDefinition{}
 	main.Identifier = "main"
 	function := program.Declarations[0].(*AST.DeclarationFunction)
 
@@ -65,7 +66,7 @@ func GenerateAssemblyProgram(program AST.Program) AST.AssemblyProgram {
 		main.Instructions = append(main.Instructions, instructionsFromNode(node)...)
 	}
 
-	return AST.AssemblyProgram{
+	return AssemblyAST.Program{
 		FunctionDefinition: main,
 	}
 }

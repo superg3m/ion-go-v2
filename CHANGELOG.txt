@@ -1,5 +1,11 @@
 CHANGELOG.txt
 
+----------- Version: 0.0.3 -----------
+- Added '~' to lexer and parser as unary
+- Working on IntermediateRepresentation
+- Split up AST and AssemblyAST just for easier naming conventions
+    now I can just say Program or FunctionDeclaration and not have then conflict
+
 ----------- Version: 0.0.2 -----------
 - AssemblyEmitter, finished Codegen
 - main.go now writes x64 att gas asm to a file

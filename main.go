@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	tokenStream := Lexer.GenerateTokenStream("./Test/return.c")
+	tokenStream := Lexer.GenerateTokenStream("./Test/unary.c")
 
 	for i := 0; i < len(tokenStream); i++ {
 		token := tokenStream[i]

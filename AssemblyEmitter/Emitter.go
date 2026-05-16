@@ -1,7 +1,9 @@
 package AssemblyEmitter
 
-import "ion/go/v2/AST"
+import (
+	"ion/go/v2/AssemblyAST"
+)
 
 type AssemblyEmitter interface {
-	EmitAssembly(program AST.AssemblyProgram)
+	EmitAssembly(program AssemblyAST.Program)
 }

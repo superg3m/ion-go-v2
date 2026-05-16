@@ -38,7 +38,7 @@ func (parser *Parser) parsePrimary() AST.Expression {
 func (parser *Parser) parseUnaryExpression() AST.Expression {
 	ret := &AST.ExpressionUnary{}
 
-	if parser.consumeOnMatch(Token.NOT) || parser.consumeOnMatch(Token.MINUS) || parser.consumeOnMatch(Token.PLUS) {
+	if parser.consumeOnMatch(Token.NOT) || parser.consumeOnMatch(Token.BITWISE_NOT) || parser.consumeOnMatch(Token.MINUS) || parser.consumeOnMatch(Token.PLUS) {
 		ret.Operator = parser.previousToken()
 		ret.Operand = parser.parseUnaryExpression()
 
