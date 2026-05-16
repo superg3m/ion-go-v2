@@ -1,6 +1,5 @@
-    .text
-
-    .globl	main
+.text
+.global main
 main:
-	movl	$2, %eax
+	movl $2, %eax
 	ret

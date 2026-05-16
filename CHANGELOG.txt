@@ -3,6 +3,7 @@ CHANGELOG.txt
 ----------- Version: 0.0.2 -----------
 - AssemblyEmitter, finished Codegen
 - main.go now writes x64 att gas asm to a file
+- getting ready for unary expressions
 
 ----------- Version: 0.0.1 -----------
 - Added AssemblyAST, Instructions, Operands, Codegen

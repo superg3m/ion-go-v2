@@ -23,7 +23,7 @@ func main() {
 	assembly := Codegen.GenerateAssemblyProgram(program)
 
 	emitter := &AssemblyEmitter.ATTx64Emitter{}
-	instructions := emitter.EmitAssembly(assembly)
+	instructions := emitter.EmitAssemblyProgram(assembly)
 
 	f, err := os.Create("Test/output.s")
 	if err != nil {
