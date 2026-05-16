@@ -17,67 +17,9 @@ type Program struct {
 }
 
 type FunctionDefinition struct {
-	identifier   string
-	instructions []Instruction
+	Identifier   string
+	Instructions []Instruction
 }
-
-type Instruction interface {
-	isInstruction()
-}
-
-type Value interface {
-	isValue()
-}
-
-type Unary struct {
-	operator    string
-	source      Value
-	destination Value
-}
-
-func NewUnaryInstruction(operator string, source Value, destination Value) Instruction {
-	return &Unary{
-		operator:    operator,
-		source:      source,
-		destination: destination,
-	}
-}
-
-type Constant struct {
-	Value int
-}
-
-type Variable struct {
-	Name string
-}
-
-func NewConstantValue(value int) Value {
-	return &Constant{
-		Value: value,
-	}
-}
-
-func NewVariable(name string) Value {
-	return &Variable{
-		Name: name,
-	}
-}
-
-type Return struct {
-	Value Value
-}
-
-func NewReturnInstruction(value Value) Instruction {
-	return &Return{
-		Value: value,
-	}
-}
-
-func (*Constant) isValue() {}
-func (*Variable) isValue() {}
-
-func (*Unary) isInstruction()  {}
-func (*Return) isInstruction() {}
 
 func emitFromStatement(stmt AST.Statement, instructions []Instruction) []Instruction {
 	switch v := stmt.(type) {
@@ -120,13 +62,13 @@ func emitFromNode(node AST.Node, instructions []Instruction) []Instruction {
 
 func GenerateIntermediateRepresentation(program AST.Program) Program {
 	main := FunctionDefinition{}
-	main.identifier = "main"
+	main.Identifier = "main"
 
 	decl := program.Declarations[0]
 	switch v := decl.(type) {
 	case *AST.DeclarationFunction:
 		for _, node := range v.Block.Body {
-			main.instructions = emitFromNode(node, main.instructions)
+			main.Instructions = emitFromNode(node, main.Instructions)
 		}
 	}
 

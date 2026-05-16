@@ -1,6 +1,9 @@
 package Codegen
 
-import "ion/go/v2/AST"
+import (
+	"ion/go/v2/AST"
+	"ion/go/v2/IR"
+)
 import "ion/go/v2/AssemblyAST"
 
 func instructionsFromStatement(stmt AST.Statement) []AssemblyAST.Instruction {
@@ -44,25 +47,25 @@ func instructionsFromDeclaration(decl AST.Declaration) []AssemblyAST.Instruction
 	return instructions
 }
 
-func instructionsFromNode(node AST.Node) []AssemblyAST.Instruction {
-	switch v := node.(type) {
-	case AST.Statement:
-		return instructionsFromStatement(v)
-	case AST.Expression:
-		return instructionsFromExpression(v)
-	case AST.Declaration:
-		return instructionsFromDeclaration(v)
+func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
+	var instructions []AssemblyAST.Instruction
+	switch v := inst.(type) {
+	case *IR.Return:
+		instructions = append(instructions, AssemblyAST.NewMoveInstruction(v.Value, AssemblyAST.NewRegisterOperand(AssemblyAST.AX)))
+		instructions = append(instructions, AssemblyAST.NewUnaryInstruction(v.Operator, v.Destination))
+	case *IR.Unary:
+		instructions = append(instructions, AssemblyAST.NewMoveInstruction(v.Destination, v.Source))
+		instructions = append(instructions, AssemblyAST.NewUnaryInstruction(v.Operator, v.Destination))
 	}
 
-	return nil
+	return instructions
 }
 
-func GenerateAssemblyProgram(program AST.Program) AssemblyAST.Program {
+func GenerateAssemblyProgram(program IR.Program) AssemblyAST.Program {
 	main := &AssemblyAST.FunctionDefinition{}
 	main.Identifier = "main"
-	function := program.Declarations[0].(*AST.DeclarationFunction)
 
-	for _, node := range function.Block.Body {
+	for _, inst := range program.FunctionDefinition.Instructions {
 		main.Instructions = append(main.Instructions, instructionsFromNode(node)...)
 	}
 
