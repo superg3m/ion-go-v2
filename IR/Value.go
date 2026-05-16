@@ -21,7 +21,7 @@ func NewConstantValue(value int) Value {
 	}
 }
 
-func NewVariable(name string) Value {
+func NewVariable(name string) *Variable {
 	return &Variable{
 		Name: name,
 	}

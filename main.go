@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"ion/go/v2/Codegen"
 	"ion/go/v2/IR"
 	"ion/go/v2/Lexer"
 	"ion/go/v2/Parser"
@@ -18,7 +19,9 @@ func main() {
 
 	program := Parser.ParseProgram(tokenStream)
 	ir := IR.GenerateIntermediateRepresentation(program)
-	fmt.Println(ir)
+	assembly := Codegen.GenerateAssemblyProgram(ir)
+	assembly = ReplacePseudoRegisters(assembly)
+	fmt.Println(assembly)
 	/*
 		assembly := Codegen.GenerateAssemblyProgram(program)
 

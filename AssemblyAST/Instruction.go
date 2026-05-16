@@ -5,13 +5,11 @@ type Instruction interface {
 }
 
 type InstructionMove struct {
-	Destination Operand
 	Source      Operand
+	Destination Operand
 }
 
-type InstructionReturn struct {
-	Value *Immediate
-}
+type InstructionReturn struct{}
 
 type InstructionStackAllocate struct {
 	Value int
@@ -22,17 +20,15 @@ type InstructionUnary struct {
 	operand  Operand
 }
 
-func NewMoveInstruction(destination Operand, source Operand) Instruction {
+func NewMoveInstruction(source Operand, destination Operand) Instruction {
 	return &InstructionMove{
 		Destination: destination,
 		Source:      source,
 	}
 }
 
-func NewReturnInstruction(value *Immediate) Instruction {
-	return &InstructionReturn{
-		Value: value,
-	}
+func NewReturnInstruction() Instruction {
+	return &InstructionReturn{}
 }
 
 func NewStackAllocateInstruction(value int) Instruction {

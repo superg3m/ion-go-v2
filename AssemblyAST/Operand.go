@@ -1,6 +1,9 @@
 package AssemblyAST
 
-import "fmt"
+import (
+	"fmt"
+	"ion/go/v2/IR"
+)
 
 type Operand interface {
 	isOperand()
@@ -19,11 +22,19 @@ const (
 )
 
 type Pseudo struct {
-	identifier string
+	Identifier string
 }
 
-func NewImmediateOperand(immediate int) Operand {
-	return &Immediate{Value: immediate}
+func NewOperand(value IR.Value) Operand {
+	switch v := value.(type) {
+	case *IR.Constant:
+		return &Immediate{Value: v.Value}
+	case *IR.Variable:
+		return &Pseudo{Identifier: v.Name}
+	}
+
+	panic("Not a Operand")
+	return nil
 }
 
 func NewRegisterOperand(register Register) Operand {
@@ -31,10 +42,6 @@ func NewRegisterOperand(register Register) Operand {
 	*ret = register
 
 	return ret
-}
-
-func NewPseudoOperand(identifier string) Operand {
-	return &Pseudo{identifier}
 }
 
 func (*Immediate) isOperand() {}

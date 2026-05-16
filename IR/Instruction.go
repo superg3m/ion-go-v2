@@ -7,14 +7,14 @@ type Instruction interface {
 type Unary struct {
 	Operator    string
 	Source      Value
-	Destination Value
+	Destination *Variable
 }
 
 type Return struct {
 	Value Value
 }
 
-func NewUnaryInstruction(operator string, source Value, destination Value) Instruction {
+func NewUnaryInstruction(operator string, source Value, destination *Variable) Instruction {
 	return &Unary{
 		Operator:    operator,
 		Source:      source,
