@@ -2,19 +2,19 @@ package AST
 
 import "ion/go/v2/Token"
 
-type SourceNode interface {
-	isSourceNode()
+type Node interface {
+	isNode()
 }
 
 type Deferrable interface {
-	SourceNode
+	Node
 	isDeferrable()
 }
 
 // ------------------------------------------------
 
 type Expression interface {
-	SourceNode
+	Node
 	isExpression()
 }
 
@@ -49,36 +49,36 @@ type ExpressionBinary struct {
 	Right    Expression
 }
 
-func (*ExpressionBoolean) isSourceNode() {}
+func (*ExpressionBoolean) isNode()       {}
 func (*ExpressionBoolean) isExpression() {}
 
-func (*ExpressionInteger) isSourceNode() {}
+func (*ExpressionInteger) isNode()       {}
 func (*ExpressionInteger) isExpression() {}
 
-func (*ExpressionFloat) isSourceNode() {}
+func (*ExpressionFloat) isNode()       {}
 func (*ExpressionFloat) isExpression() {}
 
-func (*ExpressionString) isSourceNode() {}
+func (*ExpressionString) isNode()       {}
 func (*ExpressionString) isExpression() {}
 
-func (*ExpressionGrouping) isSourceNode() {}
+func (*ExpressionGrouping) isNode()       {}
 func (*ExpressionGrouping) isExpression() {}
 
-func (*ExpressionUnary) isSourceNode() {}
+func (*ExpressionUnary) isNode()       {}
 func (*ExpressionUnary) isExpression() {}
 
-func (*ExpressionBinary) isSourceNode() {}
+func (*ExpressionBinary) isNode()       {}
 func (*ExpressionBinary) isExpression() {}
 
 // ------------------------------------------------
 
 type Statement interface {
-	SourceNode
+	Node
 	isStatement()
 }
 
 type StatementBlock struct {
-	Body []SourceNode
+	Body []Node
 }
 
 type StatementReturn struct {
@@ -86,16 +86,16 @@ type StatementReturn struct {
 	Expr Expression
 }
 
-func (*StatementBlock) isSourceNode() {}
-func (*StatementBlock) isStatement()  {}
+func (*StatementBlock) isNode()      {}
+func (*StatementBlock) isStatement() {}
 
-func (*StatementReturn) isSourceNode() {}
-func (*StatementReturn) isStatement()  {}
+func (*StatementReturn) isNode()      {}
+func (*StatementReturn) isStatement() {}
 
 // ------------------------------------------------
 
 type Declaration interface {
-	SourceNode
+	Node
 	isDeclaration()
 }
 
@@ -104,7 +104,7 @@ type DeclarationFunction struct {
 	Block *StatementBlock
 }
 
-func (*DeclarationFunction) isSourceNode()  {}
+func (*DeclarationFunction) isNode()        {}
 func (*DeclarationFunction) isDeclaration() {}
 
 type Program struct {

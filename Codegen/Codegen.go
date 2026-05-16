@@ -44,7 +44,7 @@ func instructionsFromDeclaration(decl AST.Declaration) []AssemblyAST.Instruction
 	return instructions
 }
 
-func instructionsFromNode(node AST.SourceNode) []AssemblyAST.Instruction {
+func instructionsFromNode(node AST.Node) []AssemblyAST.Instruction {
 	switch v := node.(type) {
 	case AST.Statement:
 		return instructionsFromStatement(v)

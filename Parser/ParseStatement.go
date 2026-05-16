@@ -17,7 +17,7 @@ func (parser *Parser) parseStatementReturn() AST.Statement {
 }
 
 func (parser *Parser) parseStatementBlock() AST.Statement {
-	var body []AST.SourceNode
+	var body []AST.Node
 	parser.expect(Token.LEFT_CURLY)
 	for !parser.consumeOnMatch(Token.RIGHT_CURLY) {
 		if decl := parser.parseDeclaration(); decl != nil {
