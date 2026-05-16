@@ -11,7 +11,7 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 	var instructions []AssemblyAST.Instruction
 	switch v := inst.(type) {
 	case *IR.Return:
-		instructions = append(instructions, AssemblyAST.NewMoveInstruction(AssemblyAST.NewRegisterOperand(AssemblyAST.AX), AssemblyAST.NewOperand(v.Value)))
+		instructions = append(instructions, AssemblyAST.NewMoveInstruction(AssemblyAST.NewRegisterOperand(AssemblyAST.EAX), AssemblyAST.NewOperand(v.Value)))
 		instructions = append(instructions, AssemblyAST.NewReturnInstruction())
 	case *IR.Unary:
 		destination := AssemblyAST.NewOperand(v.Destination)
@@ -69,7 +69,7 @@ func ReplacePseudoRegisters(program AssemblyAST.Program) (AssemblyAST.Program, i
 }
 
 func replaceInvalidMoveInstruction(operand AssemblyAST.Operand) AssemblyAST.Operand {
-	switch _ := operand.(type) {
+	switch operand.(type) {
 	case *AssemblyAST.Stack:
 		operand = AssemblyAST.NewRegisterOperand(AssemblyAST.R10D)
 		// Prob going to do something else here?
