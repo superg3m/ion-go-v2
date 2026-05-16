@@ -8,9 +8,9 @@ func instructionsFromStatement(stmt AST.Statement) []AssemblyAST.Instruction {
 	switch v := stmt.(type) {
 	case *AST.StatementReturn:
 		destination := &AssemblyAST.Register{Name: "%eax"}
-		source := &AssemblyAST.Immediate{Value: v.Expr.(*AST.ExpressionInteger).Value}
+		source := &AssemblyAST.IntegerConstant{Value: v.Expr.(*AST.ExpressionInteger).Value}
 		instructions = append(instructions, AssemblyAST.NewMoveInstruction(destination, source))
-		instructions = append(instructions, AssemblyAST.NewReturnInstruction())
+		instructions = append(instructions, AssemblyAST.NewReturnInstruction(source))
 	}
 
 	return instructions

@@ -19,7 +19,7 @@ type FunctionDefinition struct {
 	Instructions []Instruction
 }
 
-type Immediate struct {
+type IntegerConstant struct {
 	Value int
 }
 
@@ -32,10 +32,12 @@ type InstructionMove struct {
 	Source      Operand
 }
 
-type InstructionReturn struct{}
+type InstructionReturn struct {
+	Value *IntegerConstant
+}
 
-func (*Immediate) isOperand() {}
-func (i *Immediate) ToString() string {
+func (*IntegerConstant) isOperand() {}
+func (i *IntegerConstant) ToString() string {
 	return fmt.Sprintf("$%d", i.Value)
 }
 
@@ -54,6 +56,8 @@ func NewMoveInstruction(destination Operand, source Operand) Instruction {
 	}
 }
 
-func NewReturnInstruction() Instruction {
-	return &InstructionReturn{}
+func NewReturnInstruction(value *IntegerConstant) Instruction {
+	return &InstructionReturn{
+		Value: value,
+	}
 }
