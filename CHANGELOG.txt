@@ -3,7 +3,7 @@ CHANGELOG.txt
 ----------- Version: 0.0.4 -----------
 - Constructing AssemblyAST from IR
 - Unary Operators: '~' and '-' are working in the asm now
-- Binary Operators: '+' and '-' are working in asm now
+- Binary Operators: '+', '-', and '*' are working in asm now
 
 ----------- Version: 0.0.3 -----------
 - Added '~' to lexer and parser as unary
