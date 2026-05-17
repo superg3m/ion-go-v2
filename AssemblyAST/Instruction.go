@@ -26,6 +26,11 @@ type InstructionBinary struct {
 	Right    Operand
 }
 
+type InstructionCDQ struct{}
+type InstructionDivide struct {
+	Left Operand
+}
+
 func NewMoveInstruction(source Operand, destination Operand) Instruction {
 	return &InstructionMove{
 		Destination: destination,
@@ -58,8 +63,20 @@ func NewBinaryInstruction(operator string, left, right Operand) Instruction {
 	}
 }
 
+func NewCDQInstruction() Instruction {
+	return &InstructionCDQ{}
+}
+
+func NewDivideInstruction(left Operand) Instruction {
+	return &InstructionDivide{
+		left,
+	}
+}
+
 func (*InstructionMove) isInstruction()          {}
 func (*InstructionReturn) isInstruction()        {}
 func (*InstructionStackAllocate) isInstruction() {}
 func (*InstructionUnary) isInstruction()         {}
 func (*InstructionBinary) isInstruction()        {}
+func (*InstructionCDQ) isInstruction()           {}
+func (*InstructionDivide) isInstruction()        {}

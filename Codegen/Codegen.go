@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"ion/go/v2/AssemblyAST"
 	"ion/go/v2/IR"
-	"slices"
 )
 
 var stackOffset int
@@ -25,6 +24,22 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 		destination := AssemblyAST.NewOperand(v.Destination)
 		left := AssemblyAST.NewOperand(v.Left)
 		right := AssemblyAST.NewOperand(v.Right)
+
+		if v.Operator == "/" {
+			instructions = append(instructions, AssemblyAST.NewMoveInstruction(left, AssemblyAST.NewRegisterOperand(AssemblyAST.EAX)))
+			instructions = append(instructions, AssemblyAST.NewCDQInstruction())
+			instructions = append(instructions, AssemblyAST.NewDivideInstruction(right))
+			instructions = append(instructions, AssemblyAST.NewMoveInstruction(AssemblyAST.NewRegisterOperand(AssemblyAST.EAX), destination))
+
+			break
+		} else if v.Operator == "%" {
+			instructions = append(instructions, AssemblyAST.NewMoveInstruction(left, AssemblyAST.NewRegisterOperand(AssemblyAST.EAX)))
+			instructions = append(instructions, AssemblyAST.NewCDQInstruction())
+			instructions = append(instructions, AssemblyAST.NewDivideInstruction(right))
+			instructions = append(instructions, AssemblyAST.NewMoveInstruction(AssemblyAST.NewRegisterOperand(AssemblyAST.EDX), destination))
+
+			break
+		}
 
 		instructions = append(instructions, AssemblyAST.NewMoveInstruction(left, destination))
 		instructions = append(instructions, AssemblyAST.NewBinaryInstruction(v.Operator, destination, right))
@@ -76,7 +91,9 @@ func ReplacePseudoRegisters(program AssemblyAST.Program) (AssemblyAST.Program, i
 		case *AssemblyAST.InstructionBinary:
 			v.Left = replacePseudoOperand(stackOffsetMap, v.Left)
 			v.Right = replacePseudoOperand(stackOffsetMap, v.Right)
-		case *AssemblyAST.InstructionReturn:
+		case *AssemblyAST.InstructionDivide:
+			v.Left = replacePseudoOperand(stackOffsetMap, v.Left)
+		case *AssemblyAST.InstructionReturn, *AssemblyAST.InstructionCDQ:
 		default:
 			panic(fmt.Sprintf("Unknown instruction %T", v))
 		}
@@ -86,23 +103,27 @@ func ReplacePseudoRegisters(program AssemblyAST.Program) (AssemblyAST.Program, i
 }
 
 func ReplaceInvalidInstructions(program AssemblyAST.Program) AssemblyAST.Program {
-	for i, inst := range program.FunctionDefinition.Instructions {
+	newInstructions := make([]AssemblyAST.Instruction, 0, len(program.FunctionDefinition.Instructions)*2)
+
+	R10D := AssemblyAST.NewRegisterOperand(AssemblyAST.R10D)
+
+	for _, inst := range program.FunctionDefinition.Instructions {
 		switch v := inst.(type) {
 		case *AssemblyAST.InstructionMove:
 			if _, ok := v.Source.(*AssemblyAST.Stack); ok {
-				if _, ok := v.Destination.(*AssemblyAST.Stack); ok {
-					previousDestination := v.Destination
-					v.Destination = AssemblyAST.NewRegisterOperand(AssemblyAST.R10D)
-					program.FunctionDefinition.Instructions = slices.Insert(program.FunctionDefinition.Instructions, i+1, AssemblyAST.NewMoveInstruction(AssemblyAST.NewRegisterOperand(AssemblyAST.R10D), previousDestination))
+				if _, ok2 := v.Destination.(*AssemblyAST.Stack); ok2 {
+					newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Source, R10D))
+					v.Source = R10D
 				}
 			}
 		case *AssemblyAST.InstructionBinary:
 			if v.Operator == "*" {
 				if _, ok2 := v.Left.(*AssemblyAST.Register); !ok2 {
 					previousDestination := v.Left
-					v.Left = AssemblyAST.NewRegisterOperand(AssemblyAST.R10D)
-					program.FunctionDefinition.Instructions = slices.Insert(program.FunctionDefinition.Instructions, i, AssemblyAST.NewMoveInstruction(previousDestination, AssemblyAST.NewRegisterOperand(AssemblyAST.R10D)))
-					program.FunctionDefinition.Instructions = slices.Insert(program.FunctionDefinition.Instructions, i+2, AssemblyAST.NewMoveInstruction(AssemblyAST.NewRegisterOperand(AssemblyAST.R10D), previousDestination))
+					newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10D))
+					v.Left = R10D
+					newInstructions = append(newInstructions, v)
+					newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(R10D, previousDestination))
 					continue
 				}
 			}
@@ -110,15 +131,26 @@ func ReplaceInvalidInstructions(program AssemblyAST.Program) AssemblyAST.Program
 			if _, ok := v.Left.(*AssemblyAST.Stack); ok {
 				if _, ok2 := v.Right.(*AssemblyAST.Stack); ok2 {
 					previousDestination := v.Left
-					v.Left = AssemblyAST.NewRegisterOperand(AssemblyAST.R10D)
-					program.FunctionDefinition.Instructions = slices.Insert(program.FunctionDefinition.Instructions, i, AssemblyAST.NewMoveInstruction(AssemblyAST.NewRegisterOperand(AssemblyAST.R10D), previousDestination))
+					newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10D))
+					v.Left = R10D
+					newInstructions = append(newInstructions, v)
+					newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(R10D, previousDestination))
+					continue
 				}
 			}
-		case *AssemblyAST.InstructionStackAllocate, *AssemblyAST.InstructionReturn:
+		case *AssemblyAST.InstructionDivide:
+			if _, ok := v.Left.(*AssemblyAST.Register); !ok {
+				newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10D))
+				v.Left = R10D
+			}
+		case *AssemblyAST.InstructionReturn, *AssemblyAST.InstructionCDQ, *AssemblyAST.InstructionStackAllocate, *AssemblyAST.InstructionUnary:
 		default:
 			panic(fmt.Sprintf("Unknown instruction %T", v))
 		}
+
+		newInstructions = append(newInstructions, inst)
 	}
 
+	program.FunctionDefinition.Instructions = newInstructions
 	return program
 }

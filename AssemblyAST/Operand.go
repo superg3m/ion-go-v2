@@ -19,6 +19,8 @@ type Register string
 const (
 	EAX  = Register("%eax")
 	R10D = "%r10d"
+	R11D = "%r11d"
+	EDX  = "%edx"
 )
 
 type Pseudo struct {

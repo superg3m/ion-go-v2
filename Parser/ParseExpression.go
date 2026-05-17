@@ -48,11 +48,11 @@ func (parser *Parser) parseUnaryExpression() AST.Expression {
 	return parser.parsePrimary()
 }
 
-// <multiplicative>     ::= <Unary> (('*'|'/') <Unary>)*
+// <multiplicative>     ::= <Unary> (('*'|'/'|'%') <Unary>)*
 func (parser *Parser) parseMultiplicativeExpression() AST.Expression {
 	expr := parser.parseUnaryExpression()
 
-	for parser.consumeOnMatch(Token.STAR) || parser.consumeOnMatch(Token.DIVISION) {
+	for parser.consumeOnMatch(Token.STAR) || parser.consumeOnMatch(Token.DIVISION) || parser.consumeOnMatch(Token.MODULUS) {
 		op := parser.previousToken()
 		right := parser.parseUnaryExpression()
 		expr = &AST.ExpressionBinary{

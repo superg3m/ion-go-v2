@@ -51,6 +51,10 @@ func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 		default:
 			panic(fmt.Sprintf("Unknown operator %s", v.Operator))
 		}
+	case *AssemblyAST.InstructionCDQ:
+		instructions = []string{fmt.Sprintf("\tcdq")}
+	case *AssemblyAST.InstructionDivide:
+		instructions = []string{fmt.Sprintf("\tidiv %s", v.Left.ToString())}
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", inst))
 	}
