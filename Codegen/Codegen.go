@@ -97,6 +97,16 @@ func ReplaceInvalidInstructions(program AssemblyAST.Program) AssemblyAST.Program
 				}
 			}
 		case *AssemblyAST.InstructionBinary:
+			if v.Operator == "*" {
+				if _, ok2 := v.Left.(*AssemblyAST.Register); !ok2 {
+					previousDestination := v.Left
+					v.Left = AssemblyAST.NewRegisterOperand(AssemblyAST.R10D)
+					program.FunctionDefinition.Instructions = slices.Insert(program.FunctionDefinition.Instructions, i, AssemblyAST.NewMoveInstruction(previousDestination, AssemblyAST.NewRegisterOperand(AssemblyAST.R10D)))
+					program.FunctionDefinition.Instructions = slices.Insert(program.FunctionDefinition.Instructions, i+2, AssemblyAST.NewMoveInstruction(AssemblyAST.NewRegisterOperand(AssemblyAST.R10D), previousDestination))
+					continue
+				}
+			}
+
 			if _, ok := v.Left.(*AssemblyAST.Stack); ok {
 				if _, ok2 := v.Right.(*AssemblyAST.Stack); ok2 {
 					previousDestination := v.Left
