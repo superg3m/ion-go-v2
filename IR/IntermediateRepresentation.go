@@ -27,6 +27,8 @@ func emitFromStatement(stmt AST.Statement, instructions []Instruction) []Instruc
 		var value Value
 		instructions, value = emitFromExpression(v.Expr, instructions)
 		instructions = append(instructions, NewReturnInstruction(value))
+	default:
+		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}
 
 	return instructions
@@ -44,6 +46,15 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 		destination := NewVariable(uniqueTempVariableName())
 		instructions = append(instructions, NewUnaryInstruction(v.Operator.Lexeme, source, destination))
 		return instructions, destination
+	case *AST.ExpressionBinary:
+		var left, right Value
+		instructions, left = emitFromExpression(v.Left, instructions)
+		instructions, right = emitFromExpression(v.Right, instructions)
+		destination := NewVariable(uniqueTempVariableName())
+		instructions = append(instructions, NewBinaryInstruction(v.Operator.Lexeme, left, right, destination))
+		return instructions, destination
+	default:
+		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}
 
 	return instructions, nil
@@ -55,6 +66,8 @@ func emitFromNode(node AST.Node, instructions []Instruction) []Instruction {
 		instructions, _ = emitFromExpression(v, instructions)
 	case AST.Statement:
 		return emitFromStatement(v, instructions)
+	default:
+		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}
 
 	return instructions
@@ -70,6 +83,8 @@ func GenerateIntermediateRepresentation(program AST.Program) Program {
 		for _, node := range v.Block.Body {
 			main.Instructions = emitFromNode(node, main.Instructions)
 		}
+	default:
+		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}
 
 	return Program{

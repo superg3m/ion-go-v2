@@ -1,6 +1,7 @@
 package Codegen
 
 import (
+	"fmt"
 	"ion/go/v2/AssemblyAST"
 	"ion/go/v2/IR"
 	"slices"
@@ -20,6 +21,15 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 
 		instructions = append(instructions, AssemblyAST.NewMoveInstruction(source, destination))
 		instructions = append(instructions, AssemblyAST.NewUnaryInstruction(v.Operator, destination))
+	case *IR.Binary:
+		destination := AssemblyAST.NewOperand(v.Destination)
+		left := AssemblyAST.NewOperand(v.Left)
+		right := AssemblyAST.NewOperand(v.Right)
+
+		instructions = append(instructions, AssemblyAST.NewMoveInstruction(left, destination))
+		instructions = append(instructions, AssemblyAST.NewBinaryInstruction(v.Operator, destination, right))
+	default:
+		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}
 
 	return instructions
@@ -63,13 +73,19 @@ func ReplacePseudoRegisters(program AssemblyAST.Program) (AssemblyAST.Program, i
 			v.Destination = replacePseudoOperand(stackOffsetMap, v.Destination)
 		case *AssemblyAST.InstructionUnary:
 			v.Operand = replacePseudoOperand(stackOffsetMap, v.Operand)
+		case *AssemblyAST.InstructionBinary:
+			v.Left = replacePseudoOperand(stackOffsetMap, v.Left)
+			v.Right = replacePseudoOperand(stackOffsetMap, v.Right)
+		case *AssemblyAST.InstructionReturn:
+		default:
+			panic(fmt.Sprintf("Unknown instruction %T", v))
 		}
 	}
 
 	return program, stackOffset
 }
 
-func ReplaceInvalidMoveInstructions(program AssemblyAST.Program) AssemblyAST.Program {
+func ReplaceInvalidInstructions(program AssemblyAST.Program) AssemblyAST.Program {
 	for i, inst := range program.FunctionDefinition.Instructions {
 		switch v := inst.(type) {
 		case *AssemblyAST.InstructionMove:
@@ -80,6 +96,17 @@ func ReplaceInvalidMoveInstructions(program AssemblyAST.Program) AssemblyAST.Pro
 					program.FunctionDefinition.Instructions = slices.Insert(program.FunctionDefinition.Instructions, i+1, AssemblyAST.NewMoveInstruction(AssemblyAST.NewRegisterOperand(AssemblyAST.R10D), previousDestination))
 				}
 			}
+		case *AssemblyAST.InstructionBinary:
+			if _, ok := v.Left.(*AssemblyAST.Stack); ok {
+				if _, ok2 := v.Right.(*AssemblyAST.Stack); ok2 {
+					previousDestination := v.Left
+					v.Left = AssemblyAST.NewRegisterOperand(AssemblyAST.R10D)
+					program.FunctionDefinition.Instructions = slices.Insert(program.FunctionDefinition.Instructions, i, AssemblyAST.NewMoveInstruction(AssemblyAST.NewRegisterOperand(AssemblyAST.R10D), previousDestination))
+				}
+			}
+		case *AssemblyAST.InstructionStackAllocate, *AssemblyAST.InstructionReturn:
+		default:
+			panic(fmt.Sprintf("Unknown instruction %T", v))
 		}
 	}
 

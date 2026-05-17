@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	tokenStream := Lexer.GenerateTokenStream("./Test/unary.c")
+	tokenStream := Lexer.GenerateTokenStream("./Test/binary.c")
 
 	for i := 0; i < len(tokenStream); i++ {
 		token := tokenStream[i]
@@ -29,7 +29,7 @@ func main() {
 	finalStackOffset := 0
 	assembly, finalStackOffset = Codegen.ReplacePseudoRegisters(assembly)
 	assembly.FunctionDefinition.Instructions = slices.Insert(assembly.FunctionDefinition.Instructions, 0, AssemblyAST.NewStackAllocateInstruction(finalStackOffset))
-	assembly = Codegen.ReplaceInvalidMoveInstructions(assembly)
+	assembly = Codegen.ReplaceInvalidInstructions(assembly)
 
 	emitter := &AssemblyEmitter.ATTx64Emitter{}
 	instructions := emitter.EmitAssemblyProgram(assembly)

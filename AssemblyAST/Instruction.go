@@ -20,6 +20,12 @@ type InstructionUnary struct {
 	Operand  Operand
 }
 
+type InstructionBinary struct {
+	Operator string
+	Left     Operand
+	Right    Operand
+}
+
 func NewMoveInstruction(source Operand, destination Operand) Instruction {
 	return &InstructionMove{
 		Destination: destination,
@@ -44,7 +50,16 @@ func NewUnaryInstruction(operator string, operand Operand) Instruction {
 	}
 }
 
+func NewBinaryInstruction(operator string, left, right Operand) Instruction {
+	return &InstructionBinary{
+		operator,
+		left,
+		right,
+	}
+}
+
 func (*InstructionMove) isInstruction()          {}
 func (*InstructionReturn) isInstruction()        {}
 func (*InstructionStackAllocate) isInstruction() {}
 func (*InstructionUnary) isInstruction()         {}
+func (*InstructionBinary) isInstruction()        {}

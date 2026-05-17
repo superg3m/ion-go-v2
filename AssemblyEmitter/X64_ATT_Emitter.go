@@ -40,7 +40,15 @@ func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 		case "~":
 			instructions = []string{fmt.Sprintf("\tnotl %s", v.Operand.ToString())}
 		}
-
+	case *AssemblyAST.InstructionBinary:
+		switch v.Operator {
+		case "+":
+			instructions = []string{fmt.Sprintf("\taddl %s, %s", v.Right.ToString(), v.Left.ToString())}
+		case "-":
+			instructions = []string{fmt.Sprintf("\tsubl %s, %s", v.Right.ToString(), v.Left.ToString())}
+		}
+	default:
+		panic(fmt.Sprintf("Unknown instruction %T", inst))
 	}
 
 	return instructions

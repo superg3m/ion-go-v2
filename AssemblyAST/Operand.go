@@ -35,9 +35,10 @@ func NewOperand(value IR.Value) Operand {
 		return &Immediate{Value: v.Value}
 	case *IR.Variable:
 		return &Pseudo{Identifier: v.Name}
+	default:
+		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}
 
-	panic("Not a Operand")
 	return nil
 }
 
