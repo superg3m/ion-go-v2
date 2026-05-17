@@ -55,6 +55,10 @@ func NewStackOperand(offset int) Operand {
 	return &Stack{Offset: offset}
 }
 
+func NewImmediateOperand(value int) Operand {
+	return &Immediate{Value: value}
+}
+
 func (*Immediate) isOperand() {}
 func (i *Immediate) ToString() string {
 	return fmt.Sprintf("$%d", i.Value)

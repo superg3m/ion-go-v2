@@ -21,6 +21,26 @@ type Binary struct {
 	Destination *Variable
 }
 
+type Copy struct {
+	Source      Value
+	Destination Value
+}
+
+type Jump struct {
+	TargetLabel string
+}
+
+type ConditionalJump struct {
+	TargetLabel string
+	Condition   Value
+	IfZero      bool
+	IfNotZero   bool
+}
+
+type Label struct {
+	Identifier string
+}
+
 func NewReturnInstruction(value Value) Instruction {
 	return &Return{
 		Value: value,
@@ -44,6 +64,38 @@ func NewBinaryInstruction(operator string, left Value, right Value, destination 
 	}
 }
 
-func (*Return) isInstruction() {}
-func (*Unary) isInstruction()  {}
-func (*Binary) isInstruction() {}
+func NewCopyInstruction(source Value, destination Value) Instruction {
+	return &Copy{
+		Source:      source,
+		Destination: destination,
+	}
+}
+
+func NewJumpInstruction(targetLabel string) Instruction {
+	return &Jump{
+		TargetLabel: targetLabel,
+	}
+}
+
+func NewConditionalJumpInstruction(targetLabel string, condition Value, ifZero bool, ifNotZero bool) Instruction {
+	return &ConditionalJump{
+		TargetLabel: targetLabel,
+		Condition:   condition,
+		IfZero:      ifZero,
+		IfNotZero:   ifNotZero,
+	}
+}
+
+func NewLabelInstruction(identifier string) Instruction {
+	return &Label{
+		Identifier: identifier,
+	}
+}
+
+func (*Return) isInstruction()          {}
+func (*Unary) isInstruction()           {}
+func (*Binary) isInstruction()          {}
+func (*Copy) isInstruction()            {}
+func (*Jump) isInstruction()            {}
+func (*ConditionalJump) isInstruction() {}
+func (*Label) isInstruction()           {}

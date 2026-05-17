@@ -86,9 +86,7 @@ func (parser *Parser) parseAdditiveExpression() AST.Expression {
 func (parser *Parser) parseComparisonExpression() AST.Expression {
 	expr := parser.parseAdditiveExpression()
 
-	for parser.consumeOnMatch(Token.EQUALS_EQUALS) ||
-		parser.consumeOnMatch(Token.NOT_EQUALS) ||
-		parser.consumeOnMatch(Token.LESS_THAN) ||
+	for parser.consumeOnMatch(Token.LESS_THAN) ||
 		parser.consumeOnMatch(Token.LESS_THAN_EQUALS) ||
 		parser.consumeOnMatch(Token.GREATER_THAN_EQUALS) ||
 		parser.consumeOnMatch(Token.GREATER_THAN) {
@@ -104,11 +102,11 @@ func (parser *Parser) parseComparisonExpression() AST.Expression {
 	return expr
 }
 
-// <logical> ::= <comparison> (('&&'|'||') <comparison>)*
-func (parser *Parser) parseLogicalExpression() AST.Expression {
+// <equality> ::= <comparison> (('=='|'!=') <comparison>)*
+func (parser *Parser) parseEqualityExpression() AST.Expression {
 	expr := parser.parseComparisonExpression()
 
-	for parser.consumeOnMatch(Token.LOGICAL_AND) || parser.consumeOnMatch(Token.LOGICAL_OR) {
+	for parser.consumeOnMatch(Token.EQUALS_EQUALS) || parser.consumeOnMatch(Token.NOT_EQUALS) {
 		op := parser.previousToken()
 		right := parser.parseComparisonExpression()
 		expr = &AST.ExpressionBinary{
@@ -121,7 +119,41 @@ func (parser *Parser) parseLogicalExpression() AST.Expression {
 	return expr
 }
 
+// <logical_and> ::= <equality> ('||' <equality>)*
+func (parser *Parser) parseLogicalAndExpression() AST.Expression {
+	expr := parser.parseEqualityExpression()
+
+	for parser.consumeOnMatch(Token.LOGICAL_OR) {
+		op := parser.previousToken()
+		right := parser.parseEqualityExpression()
+		expr = &AST.ExpressionBinary{
+			Operator: op,
+			Left:     expr,
+			Right:    right,
+		}
+	}
+
+	return expr
+}
+
+// <logical_or> ::= <logical_and> ('&&' <logical_and>)*
+func (parser *Parser) parseLogicalOrExpression() AST.Expression {
+	expr := parser.parseLogicalAndExpression()
+
+	for parser.consumeOnMatch(Token.LOGICAL_AND) {
+		op := parser.previousToken()
+		right := parser.parseLogicalAndExpression()
+		expr = &AST.ExpressionBinary{
+			Operator: op,
+			Left:     expr,
+			Right:    right,
+		}
+	}
+
+	return expr
+}
+
 // <Expression> ::= <additive>
 func (parser *Parser) parseExpression() AST.Expression {
-	return parser.parseLogicalExpression()
+	return parser.parseLogicalOrExpression()
 }

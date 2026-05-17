@@ -5,11 +5,17 @@ import (
 	"ion/go/v2/AST"
 )
 
-var counter int
+var tempVariableCounter int
+var labelCounter int
 
 func uniqueTempVariableName() string {
-	counter += 1
-	return fmt.Sprintf("temp.%d", counter)
+	tempVariableCounter += 1
+	return fmt.Sprintf("temp.%d", tempVariableCounter)
+}
+
+func uniqueLabelName() string {
+	labelCounter += 1
+	return fmt.Sprintf("%d", labelCounter)
 }
 
 type Program struct {
@@ -49,6 +55,46 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 	case *AST.ExpressionBinary:
 		var left, right Value
 		instructions, left = emitFromExpression(v.Left, instructions)
+		if v.Operator.Lexeme == "&&" {
+			zeroLabel := uniqueLabelName()
+			oneLabel := uniqueLabelName()
+			endLabel := uniqueLabelName()
+
+			result := NewVariable(uniqueTempVariableName())
+			instructions = append(instructions, NewConditionalJumpInstruction(zeroLabel, left, true, false))
+			instructions, right = emitFromExpression(v.Right, instructions)
+			instructions = append(instructions, NewLabelInstruction(oneLabel))
+			instructions = append(instructions, NewCopyInstruction(NewConstantValue(1), result))
+			instructions = append(instructions, NewJumpInstruction(endLabel))
+
+			instructions = append(instructions, NewLabelInstruction(zeroLabel))
+			instructions = append(instructions, NewCopyInstruction(NewConstantValue(0), result))
+
+			instructions = append(instructions, NewLabelInstruction(endLabel))
+
+			return instructions, result
+		} else if v.Operator.Lexeme == "||" {
+			zeroLabel := uniqueLabelName()
+			oneLabel := uniqueLabelName()
+			endLabel := uniqueLabelName()
+
+			result := NewVariable(uniqueTempVariableName())
+			instructions = append(instructions, NewConditionalJumpInstruction(oneLabel, left, false, true))
+			instructions, right = emitFromExpression(v.Right, instructions)
+			instructions = append(instructions, NewConditionalJumpInstruction(zeroLabel, right, true, false))
+
+			instructions = append(instructions, NewLabelInstruction(oneLabel))
+			instructions = append(instructions, NewCopyInstruction(NewConstantValue(1), result))
+			instructions = append(instructions, NewJumpInstruction(endLabel))
+
+			instructions = append(instructions, NewLabelInstruction(zeroLabel))
+			instructions = append(instructions, NewCopyInstruction(NewConstantValue(0), result))
+
+			instructions = append(instructions, NewLabelInstruction(endLabel))
+
+			return instructions, result
+		}
+
 		instructions, right = emitFromExpression(v.Right, instructions)
 		destination := NewVariable(uniqueTempVariableName())
 		instructions = append(instructions, NewBinaryInstruction(v.Operator.Lexeme, left, right, destination))

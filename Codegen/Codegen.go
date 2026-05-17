@@ -39,10 +39,35 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 			instructions = append(instructions, AssemblyAST.NewMoveInstruction(AssemblyAST.NewRegisterOperand(AssemblyAST.EDX), destination))
 
 			break
+		} else if v.Operator == ">" || v.Operator == "<" || v.Operator == "<=" || v.Operator == ">=" || v.Operator == "==" || v.Operator == "!=" {
+			instructions = append(instructions, AssemblyAST.NewCompareInstruction(left, right))
+			instructions = append(instructions, AssemblyAST.NewMoveInstruction(AssemblyAST.NewImmediateOperand(0), destination))
+			instructions = append(instructions, AssemblyAST.NewSetConditionalCodeInstruction(destination, AssemblyAST.ConditionalCode(v.Operator)))
+
+			break
 		}
 
 		instructions = append(instructions, AssemblyAST.NewMoveInstruction(left, destination))
 		instructions = append(instructions, AssemblyAST.NewBinaryInstruction(v.Operator, destination, right))
+	case *IR.Jump:
+		instructions = append(instructions, AssemblyAST.NewJumpInstruction(v.TargetLabel))
+	case *IR.Label:
+		instructions = append(instructions, AssemblyAST.NewLabelInstruction(v.Identifier))
+	case *IR.Copy:
+		left := AssemblyAST.NewOperand(v.Source)
+		right := AssemblyAST.NewOperand(v.Destination)
+		instructions = append(instructions, AssemblyAST.NewMoveInstruction(left, right))
+	case *IR.ConditionalJump:
+		cmp := 0
+		if v.IfZero {
+			cmp = 0
+		} else if v.IfNotZero {
+			cmp = 1
+		}
+
+		condition := AssemblyAST.NewOperand(v.Condition)
+		instructions = append(instructions, AssemblyAST.NewCompareInstruction(AssemblyAST.NewImmediateOperand(cmp), condition))
+		instructions = append(instructions, AssemblyAST.NewConditionalJumpInstruction(v.TargetLabel, AssemblyAST.EQUALS))
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}
@@ -93,7 +118,10 @@ func ReplacePseudoRegisters(program AssemblyAST.Program) (AssemblyAST.Program, i
 			v.Right = replacePseudoOperand(stackOffsetMap, v.Right)
 		case *AssemblyAST.InstructionDivide:
 			v.Left = replacePseudoOperand(stackOffsetMap, v.Left)
-		case *AssemblyAST.InstructionReturn, *AssemblyAST.InstructionCDQ:
+		case *AssemblyAST.InstructionReturn, *AssemblyAST.InstructionCDQ,
+			*AssemblyAST.InstructionCompare, *AssemblyAST.InstructionConditionalJump,
+			*AssemblyAST.InstructionSetConditionalCode, *AssemblyAST.InstructionLabel,
+			*AssemblyAST.InstructionJump:
 		default:
 			panic(fmt.Sprintf("Unknown instruction %T", v))
 		}
@@ -143,7 +171,10 @@ func ReplaceInvalidInstructions(program AssemblyAST.Program) AssemblyAST.Program
 				newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10D))
 				v.Left = R10D
 			}
-		case *AssemblyAST.InstructionReturn, *AssemblyAST.InstructionCDQ, *AssemblyAST.InstructionStackAllocate, *AssemblyAST.InstructionUnary:
+		case *AssemblyAST.InstructionReturn, *AssemblyAST.InstructionCDQ,
+			*AssemblyAST.InstructionStackAllocate, *AssemblyAST.InstructionUnary,
+			*AssemblyAST.InstructionCompare, *AssemblyAST.InstructionConditionalJump,
+			*AssemblyAST.InstructionLabel, *AssemblyAST.InstructionJump:
 		default:
 			panic(fmt.Sprintf("Unknown instruction %T", v))
 		}

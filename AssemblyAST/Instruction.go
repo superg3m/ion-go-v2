@@ -31,6 +31,58 @@ type InstructionDivide struct {
 	Left Operand
 }
 
+type InstructionCompare struct {
+	C1 Operand
+	C2 Operand
+}
+type InstructionJump struct {
+	TargetLabel string
+}
+
+type ConditionalCode string
+
+const (
+	EQUALS                 = "=="
+	NOT_EQUALS             = "!="
+	LESS_THAN              = "<"
+	LESS_THAN_OR_EQUALS    = "<="
+	GREATER_THAN           = ">"
+	GREATER_THAN_OR_EQUALS = ">="
+)
+
+func (c ConditionalCode) ToString() string {
+	switch c {
+	case EQUALS:
+		return "e"
+	case NOT_EQUALS:
+		return "ne"
+	case LESS_THAN:
+		return "l"
+	case LESS_THAN_OR_EQUALS:
+		return "le"
+	case GREATER_THAN:
+		return "g"
+	case GREATER_THAN_OR_EQUALS:
+		return "ge"
+	default:
+		panic("unknown conditional")
+	}
+}
+
+type InstructionConditionalJump struct {
+	TargetLabel string
+	Code        ConditionalCode
+}
+
+type InstructionSetConditionalCode struct {
+	Destination Operand
+	Code        ConditionalCode
+}
+
+type InstructionLabel struct {
+	Identifier string
+}
+
 func NewMoveInstruction(source Operand, destination Operand) Instruction {
 	return &InstructionMove{
 		Destination: destination,
@@ -45,6 +97,39 @@ func NewReturnInstruction() Instruction {
 func NewStackAllocateInstruction(allocationSize int) Instruction {
 	return &InstructionStackAllocate{
 		AllocationSize: allocationSize,
+	}
+}
+
+func NewCompareInstruction(c1, c2 Operand) Instruction {
+	return &InstructionCompare{
+		C1: c1,
+		C2: c2,
+	}
+}
+
+func NewJumpInstruction(targetLabel string) Instruction {
+	return &InstructionJump{
+		TargetLabel: targetLabel,
+	}
+}
+
+func NewConditionalJumpInstruction(targetLabel string, code ConditionalCode) Instruction {
+	return &InstructionConditionalJump{
+		TargetLabel: targetLabel,
+		Code:        code,
+	}
+}
+
+func NewSetConditionalCodeInstruction(destination Operand, code ConditionalCode) Instruction {
+	return &InstructionSetConditionalCode{
+		Destination: destination,
+		Code:        code,
+	}
+}
+
+func NewLabelInstruction(identifier string) Instruction {
+	return &InstructionLabel{
+		Identifier: identifier,
 	}
 }
 
@@ -80,3 +165,9 @@ func (*InstructionUnary) isInstruction()         {}
 func (*InstructionBinary) isInstruction()        {}
 func (*InstructionCDQ) isInstruction()           {}
 func (*InstructionDivide) isInstruction()        {}
+
+func (*InstructionCompare) isInstruction()            {}
+func (*InstructionJump) isInstruction()               {}
+func (*InstructionConditionalJump) isInstruction()    {}
+func (*InstructionSetConditionalCode) isInstruction() {}
+func (*InstructionLabel) isInstruction()              {}
