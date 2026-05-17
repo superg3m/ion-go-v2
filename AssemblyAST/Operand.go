@@ -59,7 +59,7 @@ func (i *Immediate) ToString() string {
 
 func (*Register) isOperand() {}
 func (r *Register) ToString() string {
-	return "r.Name"
+	return string(*r)
 }
 
 func (*Pseudo) isOperand() {}

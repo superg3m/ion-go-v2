@@ -3,10 +3,13 @@ package main
 import (
 	"fmt"
 	"ion/go/v2/AssemblyAST"
+	"ion/go/v2/AssemblyEmitter"
 	"ion/go/v2/Codegen"
 	"ion/go/v2/IR"
 	"ion/go/v2/Lexer"
 	"ion/go/v2/Parser"
+	"log"
+	"os"
 	"slices"
 )
 
@@ -26,27 +29,21 @@ func main() {
 	finalStackOffset := 0
 	assembly, finalStackOffset = Codegen.ReplacePseudoRegisters(assembly)
 	assembly.FunctionDefinition.Instructions = slices.Insert(assembly.FunctionDefinition.Instructions, 0, AssemblyAST.NewStackAllocateInstruction(finalStackOffset))
+	assembly = Codegen.ReplaceInvalidMoveInstructions(assembly)
 
-	// assembly = Codegen.ReplaceInvalidMoveInstructions(assembly, &finalStackOffset)
+	emitter := &AssemblyEmitter.ATTx64Emitter{}
+	instructions := emitter.EmitAssemblyProgram(assembly)
 
-	fmt.Println(assembly)
-	/*
-		assembly := Codegen.GenerateAssemblyProgram(program)
+	f, err := os.Create("Test/output.s")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
 
-		emitter := &AssemblyEmitter.ATTx64Emitter{}
-		instructions := emitter.EmitAssemblyProgram(assembly)
-
-		f, err := os.Create("Test/output.s")
+	for _, line := range instructions {
+		_, err := f.WriteString(line + "\n")
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer f.Close()
-
-		for _, line := range instructions {
-			_, err := f.WriteString(line + "\n")
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	*/
+	}
 }

@@ -3,6 +3,7 @@ package Codegen
 import (
 	"ion/go/v2/AssemblyAST"
 	"ion/go/v2/IR"
+	"slices"
 )
 
 var stackOffset int
@@ -17,7 +18,7 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 		destination := AssemblyAST.NewOperand(v.Destination)
 		source := AssemblyAST.NewOperand(v.Source)
 
-		instructions = append(instructions, AssemblyAST.NewMoveInstruction(destination, source))
+		instructions = append(instructions, AssemblyAST.NewMoveInstruction(source, destination))
 		instructions = append(instructions, AssemblyAST.NewUnaryInstruction(v.Operator, destination))
 	}
 
@@ -68,23 +69,19 @@ func ReplacePseudoRegisters(program AssemblyAST.Program) (AssemblyAST.Program, i
 	return program, stackOffset
 }
 
-func replaceInvalidMoveInstruction(operand AssemblyAST.Operand) AssemblyAST.Operand {
-	switch operand.(type) {
-	case *AssemblyAST.Stack:
-		operand = AssemblyAST.NewRegisterOperand(AssemblyAST.R10D)
-		// Prob going to do something else here?
-	}
-
-	return operand
-}
-
-func ReplaceInvalidMoveInstructions(program AssemblyAST.Program) {
-	for _, inst := range program.FunctionDefinition.Instructions {
+func ReplaceInvalidMoveInstructions(program AssemblyAST.Program) AssemblyAST.Program {
+	for i, inst := range program.FunctionDefinition.Instructions {
 		switch v := inst.(type) {
 		case *AssemblyAST.InstructionMove:
 			if _, ok := v.Source.(*AssemblyAST.Stack); ok {
-				v.Destination = replaceInvalidMoveInstruction(v.Destination)
+				if _, ok := v.Destination.(*AssemblyAST.Stack); ok {
+					previousDestination := v.Destination
+					v.Destination = AssemblyAST.NewRegisterOperand(AssemblyAST.R10D)
+					program.FunctionDefinition.Instructions = slices.Insert(program.FunctionDefinition.Instructions, i+1, AssemblyAST.NewMoveInstruction(AssemblyAST.NewRegisterOperand(AssemblyAST.R10D), previousDestination))
+				}
 			}
 		}
 	}
+
+	return program
 }
