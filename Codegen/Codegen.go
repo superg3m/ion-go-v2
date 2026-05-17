@@ -12,7 +12,7 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 	var instructions []AssemblyAST.Instruction
 	switch v := inst.(type) {
 	case *IR.Return:
-		instructions = append(instructions, AssemblyAST.NewMoveInstruction(AssemblyAST.NewRegisterOperand(AssemblyAST.EAX), AssemblyAST.NewOperand(v.Value)))
+		instructions = append(instructions, AssemblyAST.NewMoveInstruction(AssemblyAST.NewOperand(v.Value), AssemblyAST.NewRegisterOperand(AssemblyAST.EAX)))
 		instructions = append(instructions, AssemblyAST.NewReturnInstruction())
 	case *IR.Unary:
 		destination := AssemblyAST.NewOperand(v.Destination)

@@ -11,7 +11,6 @@ func EmitFunctionPrologue() []string {
 	return []string{
 		"\tpushq %rbp",
 		"\tmovq %rsp, %rbp",
-		"\tsubq $8, %rsp",
 	}
 }
 
@@ -32,6 +31,16 @@ func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 		instructions = append(instructions, fmt.Sprintf("\tmovl %s, %s", v.Source.ToString(), v.Destination.ToString()))
 	case *AssemblyAST.InstructionReturn:
 		instructions = EmitFunctionEpilogue()
+	case *AssemblyAST.InstructionStackAllocate:
+		instructions = []string{fmt.Sprintf("\tsubq $%d, %%rsp", v.AllocationSize)}
+	case *AssemblyAST.InstructionUnary:
+		switch v.Operator {
+		case "-":
+			instructions = []string{fmt.Sprintf("\tnegl %s", v.Operand.ToString())}
+		case "~":
+			instructions = []string{fmt.Sprintf("\tnotl %s", v.Operand.ToString())}
+		}
+
 	}
 
 	return instructions
