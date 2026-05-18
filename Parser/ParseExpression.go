@@ -23,8 +23,10 @@ func (parser *Parser) parsePrimary() AST.Expression {
 		return &AST.ExpressionString{Value: current.Lexeme[1 : len(current.Lexeme)-1]}
 	} else if parser.consumeOnMatch(Token.IDENTIFIER) {
 		// next := parser.peekNthToken(0)
+
 		return &AST.ExpressionVariable{
-			Identifier: current,
+			Tok:      current,
+			DeclType: nil, // NOTE(Jovanni): The type checker will patch this
 		}
 	} else if parser.consumeOnMatch(Token.LEFT_PAREN) {
 		expr := parser.parseExpression()

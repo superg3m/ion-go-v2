@@ -43,8 +43,8 @@ type ExpressionBinary struct {
 }
 
 type ExpressionVariable struct {
-	Identifier Token.Token
-	DeclType   TS.Type
+	Tok      Token.Token
+	DeclType TS.Type
 }
 
 type ExpressionAssignment struct {

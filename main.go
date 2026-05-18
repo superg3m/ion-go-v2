@@ -14,7 +14,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -23,11 +22,9 @@ func compileFile(inputPath string, outputAsm string) error {
 	tokenStream := Lexer.GenerateTokenStream(inputPath)
 	program := Parser.ParseProgram(tokenStream)
 	SemanticAnalysis.TypeCheckProgram(program)
-	table := Symbol.CreateSymbolTable(nil)
+	globalSymbolTable := Symbol.CreateSymbolTable(nil)
 	ir := IR.GenerateIntermediateRepresentation(program)
-	assembly := Codegen.GenerateAssemblyProgram(ir)
-	assembly = Codegen.ReplacePseudoRegisters(assembly, &table)
-	assembly.FunctionDefinition.Instructions = slices.Insert(assembly.FunctionDefinition.Instructions, 0, AssemblyAST.NewStackAllocateInstruction(table.StackOffset))
+	assembly := Codegen.GenerateAssemblyProgram(ir, &globalSymbolTable)
 	assembly = Codegen.ReplaceInvalidInstructions(assembly)
 
 	return emitInstructions(outputAsm, assembly)

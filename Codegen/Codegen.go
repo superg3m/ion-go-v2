@@ -13,6 +13,7 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 
 	var instructions []AssemblyAST.Instruction
 	switch v := inst.(type) {
+
 	case *IR.Return:
 		instructions = append(instructions, AssemblyAST.NewMoveInstruction(AssemblyAST.NewOperand(v.Value), AssemblyAST.NewRegisterOperand(AssemblyAST.RAX)))
 		instructions = append(instructions, AssemblyAST.NewReturnInstruction())
@@ -84,16 +85,49 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 	return instructions
 }
 
-func GenerateAssemblyProgram(program IR.Program) AssemblyAST.Program {
-	main := &AssemblyAST.FunctionDefinition{}
-	main.Identifier = "main"
+func assemblyDefinitionFromIRDefinition(definition IR.Definition, globalSymbolTable *Symbol.SymbolTable) AssemblyAST.Definition {
+	var instructions []AssemblyAST.Instruction
 
-	for _, inst := range program.FunctionDefinition.Instructions {
-		main.Instructions = append(main.Instructions, instructionsFromIR(inst)...)
+	switch v := definition.(type) {
+	case *IR.FunctionDefinition:
+		for _, inst := range v.Instructions {
+			instructions = append(instructions, instructionsFromIR(inst)...)
+		}
+
+		table := Symbol.CreateSymbolTable(globalSymbolTable)
+		instructions = ReplacePseudoRegisters(instructions, &table)
+		return &AssemblyAST.FunctionDefinition{
+			DeclType:     v.DeclType,
+			Tok:          v.Tok,
+			Instructions: instructions,
+		}
+
+	case *IR.VariableDefinition:
+		// TODO(Jovanni): THIS IS NOT RIGHT BECAUSE IT NEEDS TO BE A GLOBAL ADDRESS NOT STACK
+		for _, inst := range v.Instructions {
+			instructions = append(instructions, instructionsFromIR(inst)...)
+		}
+
+		instructions = ReplacePseudoRegisters(instructions, globalSymbolTable)
+		return &AssemblyAST.VariableDefinition{
+			DeclType:     v.DeclType,
+			Tok:          v.Tok,
+			Instructions: instructions,
+		}
+	}
+
+	return nil
+}
+
+func GenerateAssemblyProgram(program IR.Program, globalSymbolTable *Symbol.SymbolTable) AssemblyAST.Program {
+	var definitions []AssemblyAST.Definition
+
+	for _, def := range program.Definitions {
+		definitions = append(definitions, assemblyDefinitionFromIRDefinition(def, globalSymbolTable))
 	}
 
 	return AssemblyAST.Program{
-		FunctionDefinition: main,
+		Definitions: definitions,
 	}
 }
 
@@ -113,8 +147,8 @@ func replacePseudoOperand(table *Symbol.SymbolTable, operand AssemblyAST.Operand
 	return operand
 }
 
-func ReplacePseudoRegisters(program AssemblyAST.Program, table *Symbol.SymbolTable) AssemblyAST.Program {
-	for _, inst := range program.FunctionDefinition.Instructions {
+func ReplacePseudoRegisters(instructions []AssemblyAST.Instruction, table *Symbol.SymbolTable) []AssemblyAST.Instruction {
+	for _, inst := range instructions {
 		switch v := inst.(type) {
 		case *AssemblyAST.InstructionMove:
 			v.Source = replacePseudoOperand(table, v.Source)
@@ -139,66 +173,70 @@ func ReplacePseudoRegisters(program AssemblyAST.Program, table *Symbol.SymbolTab
 		}
 	}
 
-	return program
+	return instructions
 }
 
 func ReplaceInvalidInstructions(program AssemblyAST.Program) AssemblyAST.Program {
-	newInstructions := make([]AssemblyAST.Instruction, 0, len(program.FunctionDefinition.Instructions)*2)
+	for _, def := range program.Definitions {
+		switch v := def.(type) {
+		case *AssemblyAST.FunctionDefinition:
+			newInstructions := make([]AssemblyAST.Instruction, 0, len(v.Instructions)*2)
+			R10D := AssemblyAST.NewRegisterOperand(AssemblyAST.R10)
+			for _, inst := range v.Instructions {
+				switch v := inst.(type) {
+				case *AssemblyAST.InstructionMove:
+					if _, ok := v.Source.(*AssemblyAST.Stack); ok {
+						if _, ok2 := v.Destination.(*AssemblyAST.Stack); ok2 {
+							newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Source, R10D))
+							v.Source = R10D
+						}
+					}
+				case *AssemblyAST.InstructionBinary:
+					if v.Operator == "*" {
+						if _, ok2 := v.Left.(*AssemblyAST.Register); !ok2 {
+							previousDestination := v.Left
+							newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10D))
+							v.Left = R10D
+							newInstructions = append(newInstructions, v)
+							newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(R10D, previousDestination))
+							continue
+						}
+					}
 
-	R10D := AssemblyAST.NewRegisterOperand(AssemblyAST.R10)
+					if _, ok := v.Left.(*AssemblyAST.Stack); ok {
+						if _, ok2 := v.Right.(*AssemblyAST.Stack); ok2 {
+							previousDestination := v.Left
+							newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10D))
+							v.Left = R10D
+							newInstructions = append(newInstructions, v)
+							newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(R10D, previousDestination))
+							continue
+						}
+					}
+				case *AssemblyAST.InstructionDivide:
+					if _, ok := v.Left.(*AssemblyAST.Register); !ok {
+						newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10D))
+						v.Left = R10D
+					}
+				case *AssemblyAST.InstructionCompare:
+					if _, ok := v.Left.(*AssemblyAST.Register); !ok {
+						newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10D))
+						v.Left = R10D
+					}
+				case *AssemblyAST.InstructionReturn, *AssemblyAST.InstructionCDQ,
+					*AssemblyAST.InstructionStackAllocate, *AssemblyAST.InstructionUnary,
+					*AssemblyAST.InstructionConditionalJump, *AssemblyAST.InstructionLabel,
+					*AssemblyAST.InstructionJump, *AssemblyAST.InstructionSetConditionalCode:
+				default:
+					panic(fmt.Sprintf("Unknown instruction %T", v))
+				}
 
-	for _, inst := range program.FunctionDefinition.Instructions {
-		switch v := inst.(type) {
-		case *AssemblyAST.InstructionMove:
-			if _, ok := v.Source.(*AssemblyAST.Stack); ok {
-				if _, ok2 := v.Destination.(*AssemblyAST.Stack); ok2 {
-					newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Source, R10D))
-					v.Source = R10D
-				}
-			}
-		case *AssemblyAST.InstructionBinary:
-			if v.Operator == "*" {
-				if _, ok2 := v.Left.(*AssemblyAST.Register); !ok2 {
-					previousDestination := v.Left
-					newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10D))
-					v.Left = R10D
-					newInstructions = append(newInstructions, v)
-					newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(R10D, previousDestination))
-					continue
-				}
+				newInstructions = append(newInstructions, inst)
 			}
 
-			if _, ok := v.Left.(*AssemblyAST.Stack); ok {
-				if _, ok2 := v.Right.(*AssemblyAST.Stack); ok2 {
-					previousDestination := v.Left
-					newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10D))
-					v.Left = R10D
-					newInstructions = append(newInstructions, v)
-					newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(R10D, previousDestination))
-					continue
-				}
-			}
-		case *AssemblyAST.InstructionDivide:
-			if _, ok := v.Left.(*AssemblyAST.Register); !ok {
-				newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10D))
-				v.Left = R10D
-			}
-		case *AssemblyAST.InstructionCompare:
-			if _, ok := v.Left.(*AssemblyAST.Register); !ok {
-				newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10D))
-				v.Left = R10D
-			}
-		case *AssemblyAST.InstructionReturn, *AssemblyAST.InstructionCDQ,
-			*AssemblyAST.InstructionStackAllocate, *AssemblyAST.InstructionUnary,
-			*AssemblyAST.InstructionConditionalJump, *AssemblyAST.InstructionLabel,
-			*AssemblyAST.InstructionJump, *AssemblyAST.InstructionSetConditionalCode:
-		default:
-			panic(fmt.Sprintf("Unknown instruction %T", v))
+			v.Instructions = newInstructions
 		}
-
-		newInstructions = append(newInstructions, inst)
 	}
 
-	program.FunctionDefinition.Instructions = newInstructions
 	return program
 }

@@ -3,6 +3,7 @@ package IR
 import (
 	"fmt"
 	"ion/go/v2/AST"
+	"ion/go/v2/TS"
 	"ion/go/v2/Token"
 )
 
@@ -20,14 +21,28 @@ func uniqueLabelName() string {
 	return fmt.Sprintf("%d", labelCounter)
 }
 
+type Definition interface {
+	isDefinition()
+}
+
 type Program struct {
-	FunctionDefinition FunctionDefinition
+	Definitions []Definition
 }
 
 type FunctionDefinition struct {
-	Identifier   string
+	DeclType     TS.Type
+	Tok          Token.Token
 	Instructions []Instruction
 }
+
+type VariableDefinition struct {
+	DeclType     TS.Type
+	Tok          Token.Token
+	Instructions []Instruction
+}
+
+func (*FunctionDefinition) isDefinition() {}
+func (*VariableDefinition) isDefinition() {}
 
 func emitFromStatement(stmt AST.Statement, instructions []Instruction) []Instruction {
 	switch v := stmt.(type) {
@@ -67,7 +82,7 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 	case *AST.ExpressionInteger:
 		return instructions, NewConstantValue(v.Value, v.Tok)
 	case *AST.ExpressionVariable:
-		return instructions, NewVariable(v.Identifier, v.DeclType)
+		return instructions, NewVariable(v.Tok, v.DeclType)
 	case *AST.ExpressionUnary:
 		var source Value
 		instructions, source = emitFromExpression(v.Operand, instructions)
@@ -144,15 +159,45 @@ func emitFromNode(node AST.Node, instructions []Instruction) []Instruction {
 	return instructions
 }
 
+func emitDefinitionFromDeclaration(decl AST.Declaration) Definition {
+	var instructions []Instruction
+
+	switch v := decl.(type) {
+	case *AST.DeclarationVariable:
+		var value Value
+		instructions, value = emitFromExpression(v.RHS, instructions)
+		destination := NewVariable(v.Tok, v.DeclType)
+		instructions = append(instructions, NewCopyInstruction(value, destination))
+		return &VariableDefinition{
+			DeclType:     v.DeclType,
+			Tok:          v.Tok,
+			Instructions: instructions,
+		}
+	case *AST.DeclarationFunction:
+		for _, node := range v.Block.Body {
+			instructions = append(instructions, emitFromNode(node, instructions)...)
+		}
+
+		return &FunctionDefinition{
+			DeclType:     v.DeclType,
+			Tok:          v.Tok,
+			Instructions: instructions,
+		}
+	default:
+		panic(fmt.Sprintf("Unknown instruction %T", v))
+	}
+
+	return nil
+}
+
 func GenerateIntermediateRepresentation(program AST.Program) Program {
-	main := FunctionDefinition{}
-	main.Identifier = "main"
+	var definitions []Definition
 
 	for _, decl := range program.Declarations {
-		main.Instructions = emitFromDeclaration(decl, main.Instructions)
+		definitions = append(definitions, emitDefinitionFromDeclaration(decl))
 	}
 
 	return Program{
-		FunctionDefinition: main,
+		Definitions: definitions,
 	}
 }

@@ -93,8 +93,8 @@ func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 
 func (e *ATTx64Emitter) EmitFunctionDefinition(functionDefinition *AssemblyAST.FunctionDefinition) []string {
 	instructions := []string{
-		fmt.Sprintf(".global %s", functionDefinition.Identifier),
-		fmt.Sprintf("%s:", functionDefinition.Identifier),
+		fmt.Sprintf(".global %s", functionDefinition.Tok.Lexeme),
+		fmt.Sprintf("%s:", functionDefinition.Tok.Lexeme),
 	}
 
 	instructions = append(instructions, EmitFunctionPrologue()...)
@@ -110,7 +110,15 @@ func (e *ATTx64Emitter) EmitAssemblyProgram(program AssemblyAST.Program) []strin
 	instructions := []string{
 		".text",
 	}
-	instructions = append(instructions, e.EmitFunctionDefinition(program.FunctionDefinition)...)
+	for _, def := range program.Definitions {
+		switch v := def.(type) {
+		case *AssemblyAST.FunctionDefinition:
+			instructions = append(instructions, e.EmitFunctionDefinition(v)...)
+		case *AssemblyAST.VariableDefinition:
+			panic("NOT IMPLEMENTED")
+			// instructions = append(instructions, e.EmitFunctionDefinition(v)...)
+		}
+	}
 
 	return instructions
 }

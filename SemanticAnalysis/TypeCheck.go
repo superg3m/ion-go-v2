@@ -62,7 +62,8 @@ func typeCheckExpression(e AST.Expression, env *TypeEnv) TS.Type {
 	case *AST.ExpressionString:
 		return TS.NewTypeString()
 	case *AST.ExpressionVariable:
-		decl := env.get(v.Identifier)
+		decl := env.get(v.Tok)
+		v.DeclType = decl.DeclType
 		return decl.DeclType
 	case *AST.ExpressionBinary:
 		lt := typeCheckExpression(v.Left, env)
