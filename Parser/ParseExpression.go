@@ -82,16 +82,37 @@ func (parser *Parser) parseAdditiveExpression() AST.Expression {
 	return expr
 }
 
-// <comparison> ::= <additive> (('=='|'!='|<'|'<='|'>='|'>'} <additive>)*
-func (parser *Parser) parseComparisonExpression() AST.Expression {
+// <bitwise_and_or>       ::= <additive> (('&'|'|'|'<<'|'>>') <additive>)*
+func (parser *Parser) parseBitwiseExpression() AST.Expression {
 	expr := parser.parseAdditiveExpression()
+
+	for parser.consumeOnMatch(Token.BITWISE_AND) ||
+		parser.consumeOnMatch(Token.BITWISE_OR) ||
+		parser.consumeOnMatch(Token.BITWISE_LS) ||
+		parser.consumeOnMatch(Token.BITWISE_RS) ||
+		parser.consumeOnMatch(Token.BITWISE_XOR) {
+		op := parser.previousToken()
+		right := parser.parseAdditiveExpression()
+		expr = &AST.ExpressionBinary{
+			Operator: op,
+			Left:     expr,
+			Right:    right,
+		}
+	}
+
+	return expr
+}
+
+// <comparison> ::= <bitwise_and_or> ((<'|'<='|'>='|'>'} <bitwise_and_or>)*
+func (parser *Parser) parseComparisonExpression() AST.Expression {
+	expr := parser.parseBitwiseExpression()
 
 	for parser.consumeOnMatch(Token.LESS_THAN) ||
 		parser.consumeOnMatch(Token.LESS_THAN_EQUALS) ||
 		parser.consumeOnMatch(Token.GREATER_THAN_EQUALS) ||
 		parser.consumeOnMatch(Token.GREATER_THAN) {
 		op := parser.previousToken()
-		right := parser.parseAdditiveExpression()
+		right := parser.parseBitwiseExpression()
 		expr = &AST.ExpressionBinary{
 			Operator: op,
 			Left:     expr,
@@ -119,11 +140,11 @@ func (parser *Parser) parseEqualityExpression() AST.Expression {
 	return expr
 }
 
-// <logical_and> ::= <equality> ('||' <equality>)*
+// <logical_and> ::= <equality> ('&&' <equality>)*
 func (parser *Parser) parseLogicalAndExpression() AST.Expression {
 	expr := parser.parseEqualityExpression()
 
-	for parser.consumeOnMatch(Token.LOGICAL_OR) {
+	for parser.consumeOnMatch(Token.LOGICAL_AND) {
 		op := parser.previousToken()
 		right := parser.parseEqualityExpression()
 		expr = &AST.ExpressionBinary{
@@ -136,11 +157,11 @@ func (parser *Parser) parseLogicalAndExpression() AST.Expression {
 	return expr
 }
 
-// <logical_or> ::= <logical_and> ('&&' <logical_and>)*
+// <logical_or> ::= <logical_and> ('||' <logical_and>)*
 func (parser *Parser) parseLogicalOrExpression() AST.Expression {
 	expr := parser.parseLogicalAndExpression()
 
-	for parser.consumeOnMatch(Token.LOGICAL_AND) {
+	for parser.consumeOnMatch(Token.LOGICAL_OR) {
 		op := parser.previousToken()
 		right := parser.parseLogicalAndExpression()
 		expr = &AST.ExpressionBinary{
@@ -153,7 +174,7 @@ func (parser *Parser) parseLogicalOrExpression() AST.Expression {
 	return expr
 }
 
-// <Expression> ::= <additive>
+// <Expression> ::= <logical_or>
 func (parser *Parser) parseExpression() AST.Expression {
 	return parser.parseLogicalOrExpression()
 }

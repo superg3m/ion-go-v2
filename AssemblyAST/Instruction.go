@@ -42,12 +42,12 @@ type InstructionJump struct {
 type ConditionalCode string
 
 const (
-	EQUALS                 = "=="
-	NOT_EQUALS             = "!="
-	LESS_THAN              = "<"
-	LESS_THAN_OR_EQUALS    = "<="
-	GREATER_THAN           = ">"
-	GREATER_THAN_OR_EQUALS = ">="
+	EQUALS                 ConditionalCode = "=="
+	NOT_EQUALS                             = "!="
+	LESS_THAN                              = "<"
+	LESS_THAN_OR_EQUALS                    = "<="
+	GREATER_THAN                           = ">"
+	GREATER_THAN_OR_EQUALS                 = ">="
 )
 
 func (c ConditionalCode) ToString() string {

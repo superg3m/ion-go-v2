@@ -1,4 +1,4 @@
-// EXPECT: 1
+// EXPECT: 0
 int main() {
     return 2 == 2 >= 0;
 }

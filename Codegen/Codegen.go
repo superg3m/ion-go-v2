@@ -68,16 +68,16 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 		right := AssemblyAST.NewOperand(v.Destination)
 		instructions = append(instructions, AssemblyAST.NewMoveInstruction(left, right))
 	case *IR.ConditionalJump:
-		cmp := 0
+		code := AssemblyAST.EQUALS
 		if v.IfZero {
-			cmp = 0
+			code = AssemblyAST.EQUALS
 		} else if v.IfNotZero {
-			cmp = 1
+			code = AssemblyAST.NOT_EQUALS
 		}
 
 		condition := AssemblyAST.NewOperand(v.Condition)
-		instructions = append(instructions, AssemblyAST.NewCompareInstruction(condition, AssemblyAST.NewImmediateOperand(cmp)))
-		instructions = append(instructions, AssemblyAST.NewConditionalJumpInstruction(v.TargetLabel, AssemblyAST.EQUALS))
+		instructions = append(instructions, AssemblyAST.NewCompareInstruction(condition, zeroOperand))
+		instructions = append(instructions, AssemblyAST.NewConditionalJumpInstruction(v.TargetLabel, code))
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}
