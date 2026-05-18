@@ -1,0 +1,6 @@
+int main() {
+  // you can't compare void expressions
+  if (()1 < ()2)
+    return 1;
+  return 0;
+}
