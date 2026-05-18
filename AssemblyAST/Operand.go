@@ -3,6 +3,8 @@ package AssemblyAST
 import (
 	"fmt"
 	"ion/go/v2/IR"
+	"ion/go/v2/TS"
+	"ion/go/v2/Token"
 )
 
 type Operand interface {
@@ -63,7 +65,8 @@ var RegisterLookup = map[Register]RegisterNames{
 }
 
 type Pseudo struct {
-	Identifier string
+	Tok      Token.Token
+	DeclType TS.Type
 }
 
 type Stack struct {
@@ -75,7 +78,7 @@ func NewOperand(value IR.Value) Operand {
 	case *IR.Constant:
 		return &Immediate{Value: v.Value}
 	case *IR.Variable:
-		return &Pseudo{Identifier: v.Name}
+		return &Pseudo{DeclType: v.DeclType, Tok: v.Tok}
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}

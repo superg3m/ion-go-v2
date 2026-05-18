@@ -10,6 +10,7 @@ import (
 	"ion/go/v2/Lexer"
 	"ion/go/v2/Parser"
 	"ion/go/v2/SemanticAnalysis"
+	"ion/go/v2/Symbol"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,12 +23,11 @@ func compileFile(inputPath string, outputAsm string) error {
 	tokenStream := Lexer.GenerateTokenStream(inputPath)
 	program := Parser.ParseProgram(tokenStream)
 	SemanticAnalysis.TypeCheckProgram(program)
-	// table := Symbol.CreateSymbolTable(nil)
+	table := Symbol.CreateSymbolTable(nil)
 	ir := IR.GenerateIntermediateRepresentation(program)
 	assembly := Codegen.GenerateAssemblyProgram(ir)
-	finalStackOffset := 0
-	assembly, finalStackOffset = Codegen.ReplacePseudoRegisters(assembly)
-	assembly.FunctionDefinition.Instructions = slices.Insert(assembly.FunctionDefinition.Instructions, 0, AssemblyAST.NewStackAllocateInstruction(finalStackOffset))
+	assembly = Codegen.ReplacePseudoRegisters(assembly, &table)
+	assembly.FunctionDefinition.Instructions = slices.Insert(assembly.FunctionDefinition.Instructions, 0, AssemblyAST.NewStackAllocateInstruction(table.StackOffset))
 	assembly = Codegen.ReplaceInvalidInstructions(assembly)
 
 	return emitInstructions(outputAsm, assembly)

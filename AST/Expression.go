@@ -1,6 +1,9 @@
 package AST
 
-import "ion/go/v2/Token"
+import (
+	"ion/go/v2/TS"
+	"ion/go/v2/Token"
+)
 
 type Expression interface {
 	Node
@@ -12,6 +15,7 @@ type ExpressionBoolean struct {
 }
 
 type ExpressionInteger struct {
+	Tok   Token.Token
 	Value int
 }
 
@@ -40,6 +44,7 @@ type ExpressionBinary struct {
 
 type ExpressionVariable struct {
 	Identifier Token.Token
+	DeclType   TS.Type
 }
 
 type ExpressionAssignment struct {

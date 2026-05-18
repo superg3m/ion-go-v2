@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"ion/go/v2/AssemblyAST"
 	"ion/go/v2/IR"
+	"ion/go/v2/Symbol"
 )
-
-var stackOffset int
 
 func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 	zeroOperand := AssemblyAST.NewImmediateOperand(0)
@@ -98,41 +97,40 @@ func GenerateAssemblyProgram(program IR.Program) AssemblyAST.Program {
 	}
 }
 
-func replacePseudoOperand(stackOffsetMap map[string]int, operand AssemblyAST.Operand) AssemblyAST.Operand {
+func replacePseudoOperand(table *Symbol.SymbolTable, operand AssemblyAST.Operand) AssemblyAST.Operand {
 	switch v := operand.(type) {
 	case *AssemblyAST.Pseudo:
-		if offset, ok := stackOffsetMap[v.Identifier]; ok {
+		if table.Has(v.Tok) {
+			offset := table.GetOffset(v.Tok)
 			operand = AssemblyAST.NewStackOperand(offset)
 		} else {
-			stackOffset += 4
-			stackOffsetMap[v.Identifier] = stackOffset
-			operand = AssemblyAST.NewStackOperand(stackOffset)
+			table.StackOffset += v.DeclType.Size()
+			table.Set(v.Tok, Symbol.CreateSymbol(v.Tok, v.DeclType), table.StackOffset)
+			operand = AssemblyAST.NewStackOperand(table.StackOffset)
 		}
 	}
 
 	return operand
 }
 
-func ReplacePseudoRegisters(program AssemblyAST.Program) (AssemblyAST.Program, int) {
-	stackOffsetMap := make(map[string]int)
-
+func ReplacePseudoRegisters(program AssemblyAST.Program, table *Symbol.SymbolTable) AssemblyAST.Program {
 	for _, inst := range program.FunctionDefinition.Instructions {
 		switch v := inst.(type) {
 		case *AssemblyAST.InstructionMove:
-			v.Source = replacePseudoOperand(stackOffsetMap, v.Source)
-			v.Destination = replacePseudoOperand(stackOffsetMap, v.Destination)
+			v.Source = replacePseudoOperand(table, v.Source)
+			v.Destination = replacePseudoOperand(table, v.Destination)
 		case *AssemblyAST.InstructionUnary:
-			v.Operand = replacePseudoOperand(stackOffsetMap, v.Operand)
+			v.Operand = replacePseudoOperand(table, v.Operand)
 		case *AssemblyAST.InstructionBinary:
-			v.Left = replacePseudoOperand(stackOffsetMap, v.Left)
-			v.Right = replacePseudoOperand(stackOffsetMap, v.Right)
+			v.Left = replacePseudoOperand(table, v.Left)
+			v.Right = replacePseudoOperand(table, v.Right)
 		case *AssemblyAST.InstructionDivide:
-			v.Left = replacePseudoOperand(stackOffsetMap, v.Left)
+			v.Left = replacePseudoOperand(table, v.Left)
 		case *AssemblyAST.InstructionSetConditionalCode:
-			v.Destination = replacePseudoOperand(stackOffsetMap, v.Destination)
+			v.Destination = replacePseudoOperand(table, v.Destination)
 		case *AssemblyAST.InstructionCompare:
-			v.Left = replacePseudoOperand(stackOffsetMap, v.Left)
-			v.Right = replacePseudoOperand(stackOffsetMap, v.Right)
+			v.Left = replacePseudoOperand(table, v.Left)
+			v.Right = replacePseudoOperand(table, v.Right)
 		case *AssemblyAST.InstructionReturn, *AssemblyAST.InstructionCDQ,
 			*AssemblyAST.InstructionConditionalJump, *AssemblyAST.InstructionLabel,
 			*AssemblyAST.InstructionJump:
@@ -141,7 +139,7 @@ func ReplacePseudoRegisters(program AssemblyAST.Program) (AssemblyAST.Program, i
 		}
 	}
 
-	return program, stackOffset
+	return program
 }
 
 func ReplaceInvalidInstructions(program AssemblyAST.Program) AssemblyAST.Program {

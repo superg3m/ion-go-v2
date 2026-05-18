@@ -2,21 +2,35 @@ package Symbol
 
 import (
 	"fmt"
-	"ion/go/v2/AST"
+	"ion/go/v2/TS"
 	"ion/go/v2/Token"
 )
 
+type Symbol struct {
+	Tok      Token.Token
+	DeclType TS.Type
+}
+
+func CreateSymbol(token Token.Token, declType TS.Type) Symbol {
+	return Symbol{
+		Tok:      token,
+		DeclType: declType,
+	}
+}
+
 type SymbolTable struct {
 	parent      *SymbolTable
-	variables   map[string]AST.Expression
+	symbols     map[string]Symbol
+	offsets     map[Symbol]int
 	StackOffset int
 	// deferStack []*AST.StatementDefer
 }
 
 func CreateSymbolTable(parent *SymbolTable) SymbolTable {
 	return SymbolTable{
-		parent:    parent,
-		variables: make(map[string]AST.Expression),
+		parent:  parent,
+		symbols: make(map[string]Symbol),
+		offsets: make(map[Symbol]int),
 		// deferStack: make([]*AST.StatementDefer, 0),
 	}
 }
@@ -37,10 +51,10 @@ func (s *SymbolTable) AddDeferStatement(deferStatement *AST.StatementDefer) {
 }
 */
 
-func (s *SymbolTable) has(key Token.Token) bool {
+func (s *SymbolTable) Has(key Token.Token) bool {
 	current := s
 	for current != nil {
-		_, ok := current.variables[key.Lexeme]
+		_, ok := current.symbols[key.Lexeme]
 		if ok {
 			return true
 		}
@@ -50,10 +64,10 @@ func (s *SymbolTable) has(key Token.Token) bool {
 	return false
 }
 
-func (s *SymbolTable) get(key Token.Token) AST.Expression {
+func (s *SymbolTable) GetSymbol(key Token.Token) Symbol {
 	current := s
 	for current != nil {
-		value, ok := current.variables[key.Lexeme]
+		value, ok := current.symbols[key.Lexeme]
 		if ok {
 			return value
 		}
@@ -61,19 +75,35 @@ func (s *SymbolTable) get(key Token.Token) AST.Expression {
 	}
 
 	panic(fmt.Sprintf("Line: %d | Undeclared Identifier: %s", key.Line, key.Lexeme))
-	return nil
+	return Symbol{}
 }
 
-func (s *SymbolTable) set(key Token.Token, value AST.Expression) {
+func (s *SymbolTable) GetOffset(key Token.Token) int {
 	current := s
 	for current != nil {
-		_, ok := current.variables[key.Lexeme]
+		value, ok := current.symbols[key.Lexeme]
 		if ok {
-			current.variables[key.Lexeme] = value
+			return s.offsets[value]
+		}
+		current = current.parent
+	}
+
+	panic(fmt.Sprintf("Line: %d | Undeclared Identifier: %s", key.Line, key.Lexeme))
+	return -1
+}
+
+func (s *SymbolTable) Set(key Token.Token, symbol Symbol, offset int) {
+	current := s
+	for current != nil {
+		_, ok := current.symbols[key.Lexeme]
+		if ok {
+			current.symbols[key.Lexeme] = symbol
+			current.offsets[symbol] = offset
 			return
 		}
 		current = current.parent
 	}
 
-	s.variables[key.Lexeme] = value
+	s.symbols[key.Lexeme] = symbol
+	s.offsets[symbol] = offset
 }

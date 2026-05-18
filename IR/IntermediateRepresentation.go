@@ -3,14 +3,16 @@ package IR
 import (
 	"fmt"
 	"ion/go/v2/AST"
+	"ion/go/v2/Token"
 )
 
 var tempVariableCounter int
 var labelCounter int
 
-func uniqueTempVariableName() string {
+func uniqueTempVariableToken(token Token.Token) Token.Token {
 	tempVariableCounter += 1
-	return fmt.Sprintf("temp.%d", tempVariableCounter)
+	token.Lexeme = fmt.Sprintf("temp.%d", tempVariableCounter)
+	return token
 }
 
 func uniqueLabelName() string {
@@ -45,7 +47,7 @@ func emitFromDeclaration(decl AST.Declaration, instructions []Instruction) []Ins
 	case *AST.DeclarationVariable:
 		var value Value
 		instructions, value = emitFromExpression(v.RHS, instructions)
-		destination := NewVariable(v.Tok.Lexeme)
+		destination := NewVariable(v.Tok, v.DeclType)
 		instructions = append(instructions, NewCopyInstruction(value, destination))
 	case *AST.DeclarationFunction:
 		for _, node := range v.Block.Body {
@@ -63,13 +65,13 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 	case *AST.ExpressionGrouping:
 		return emitFromExpression(v.Expr, instructions)
 	case *AST.ExpressionInteger:
-		return instructions, NewConstantValue(v.Value)
+		return instructions, NewConstantValue(v.Value, v.Tok)
 	case *AST.ExpressionVariable:
-		return instructions, NewVariable(v.Identifier.Lexeme)
+		return instructions, NewVariable(v.Identifier, v.DeclType)
 	case *AST.ExpressionUnary:
 		var source Value
 		instructions, source = emitFromExpression(v.Operand, instructions)
-		destination := NewVariable(uniqueTempVariableName())
+		destination := NewVariable(uniqueTempVariableToken(v.Operator), source.GetDeclType())
 		instructions = append(instructions, NewUnaryInstruction(v.Operator.Lexeme, source, destination))
 		return instructions, destination
 	case *AST.ExpressionBinary:
@@ -80,16 +82,16 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 			oneLabel := uniqueLabelName()
 			endLabel := uniqueLabelName()
 
-			result := NewVariable(uniqueTempVariableName())
+			result := NewVariable(uniqueTempVariableToken(v.Operator), left.GetDeclType())
 			instructions = append(instructions, NewConditionalJumpInstruction(zeroLabel, left, true, false))
 			instructions, right = emitFromExpression(v.Right, instructions)
 			instructions = append(instructions, NewLabelInstruction(oneLabel))
 			instructions = append(instructions, NewConditionalJumpInstruction(zeroLabel, right, true, false))
-			instructions = append(instructions, NewCopyInstruction(NewConstantValue(1), result))
+			instructions = append(instructions, NewCopyInstruction(NewConstantValue(1, v.Operator), result))
 			instructions = append(instructions, NewJumpInstruction(endLabel))
 
 			instructions = append(instructions, NewLabelInstruction(zeroLabel))
-			instructions = append(instructions, NewCopyInstruction(NewConstantValue(0), result))
+			instructions = append(instructions, NewCopyInstruction(NewConstantValue(0, v.Operator), result))
 
 			instructions = append(instructions, NewLabelInstruction(endLabel))
 
@@ -99,17 +101,17 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 			oneLabel := uniqueLabelName()
 			endLabel := uniqueLabelName()
 
-			result := NewVariable(uniqueTempVariableName())
+			result := NewVariable(uniqueTempVariableToken(v.Operator), left.GetDeclType())
 			instructions = append(instructions, NewConditionalJumpInstruction(oneLabel, left, false, true))
 			instructions, right = emitFromExpression(v.Right, instructions)
 			instructions = append(instructions, NewConditionalJumpInstruction(zeroLabel, right, true, false))
 
 			instructions = append(instructions, NewLabelInstruction(oneLabel))
-			instructions = append(instructions, NewCopyInstruction(NewConstantValue(1), result))
+			instructions = append(instructions, NewCopyInstruction(NewConstantValue(1, v.Operator), result))
 			instructions = append(instructions, NewJumpInstruction(endLabel))
 
 			instructions = append(instructions, NewLabelInstruction(zeroLabel))
-			instructions = append(instructions, NewCopyInstruction(NewConstantValue(0), result))
+			instructions = append(instructions, NewCopyInstruction(NewConstantValue(0, v.Operator), result))
 
 			instructions = append(instructions, NewLabelInstruction(endLabel))
 
@@ -117,7 +119,7 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 		}
 
 		instructions, right = emitFromExpression(v.Right, instructions)
-		destination := NewVariable(uniqueTempVariableName())
+		destination := NewVariable(uniqueTempVariableToken(v.Operator), left.GetDeclType())
 		instructions = append(instructions, NewBinaryInstruction(v.Operator.Lexeme, left, right, destination))
 		return instructions, destination
 	default:
