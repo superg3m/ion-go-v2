@@ -1,7 +1,7 @@
-// EXPECT: -1
+// EXPECT: 1
 int main() {
 	int x = 5;
-	x -= 6;
+	x /= 3;
 
 	return x;
 }

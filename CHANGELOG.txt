@@ -5,6 +5,7 @@ CHANGELOG.txt
 - Major deviation from the book
 - ExpressionAssignment
 - SymbolTable
+- Compound Assignments: '+=', '-=', '*=', "/="
 
 ----------- Version: 0.0.6 -----------
 - Working on logical expressions
