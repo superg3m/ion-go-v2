@@ -64,11 +64,14 @@ func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 	case *AssemblyAST.InstructionSetConditionalCode:
 		switch t := v.Destination.(type) {
 		case *AssemblyAST.Stack:
-			instructions = []string{fmt.Sprintf("\tset%s %s", v.Code.ToString(), v.Destination.ToString())}
+			instructions = []string{
+				fmt.Sprintf("\tset%s %s", v.Code.ToString(), v.Destination.ToString()),
+			}
 		case *AssemblyAST.Register:
-			instructions = []string{fmt.Sprintf("\tset%s %s", v.Code.ToString(), t.X8BitName())}
+			instructions = []string{
+				fmt.Sprintf("\tset%s %s", v.Code.ToString(), t.X8BitName()),
+			}
 		}
-		instructions = []string{fmt.Sprintf("\tset%s %s", v.Code.ToString(), v.Destination.ToString())}
 	case *AssemblyAST.InstructionLabel:
 		instructions = []string{fmt.Sprintf(".L%s:", v.Identifier)}
 	default:

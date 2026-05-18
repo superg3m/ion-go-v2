@@ -22,6 +22,7 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 		source := AssemblyAST.NewOperand(v.Source)
 		if v.Operator == "!" {
 			instructions = append(instructions, AssemblyAST.NewCompareInstruction(zeroOperand, source))
+			instructions = append(instructions, AssemblyAST.NewMoveInstruction(zeroOperand, destination))
 			instructions = append(instructions, AssemblyAST.NewSetConditionalCodeInstruction(destination, AssemblyAST.EQUALS))
 
 			break
@@ -50,6 +51,7 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 			break
 		} else if v.Operator == ">" || v.Operator == "<" || v.Operator == "<=" || v.Operator == ">=" || v.Operator == "==" || v.Operator == "!=" {
 			instructions = append(instructions, AssemblyAST.NewCompareInstruction(left, right))
+			instructions = append(instructions, AssemblyAST.NewMoveInstruction(zeroOperand, destination))
 			instructions = append(instructions, AssemblyAST.NewSetConditionalCodeInstruction(destination, AssemblyAST.ConditionalCode(v.Operator)))
 
 			break
