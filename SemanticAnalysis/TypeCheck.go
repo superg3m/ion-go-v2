@@ -1,0 +1,436 @@
+package SemanticAnalysis
+
+import (
+	"fmt"
+	"ion/go/v2/AST"
+	"ion/go/v2/TS"
+)
+
+type StatementTypePair struct {
+	stmt *AST.StatementReturn
+	t    TS.Type
+}
+
+var globalFunctions map[string]*AST.DeclarationFunction
+
+// var globalStruct map[string]*AST.DeclarationStruct
+var globalReturnStatementStack []StatementTypePair
+
+/*
+func typeCheckFunctionCall(v *AST.SE_FunctionCall, env *TypeEnv) TS.Type {
+	functionDeclaration, ok := globalFunctions[v.Tok.Lexeme]
+	if !ok {
+		panic("undefined function " + v.Tok.Lexeme)
+	}
+
+	functionType := functionDeclaration.DeclType.(*TS.FunctionType)
+	argCount := len(v.Arguments)
+	paramCount := len(functionType.Params)
+
+	if paramCount != argCount {
+		panic(fmt.Sprintf("expected %d parameter(s), got %d", argCount, paramCount))
+	}
+
+	for i := 0; i < argCount; i++ {
+		param := functionType.Params[i]
+		arg := v.Arguments[i]
+		argType := typeCheckExpression(arg, env)
+
+		if canCast, err := TS.CanImplicitCast(param.DeclType, argType); !canCast {
+			panic(fmt.Sprintf("Line %d | argument %d: expected %s, got %s | %s", v.Tok.Line, i, param.DeclType.String(), argType.String(), err.Error()))
+		}
+	}
+
+	return functionType.ReturnType
+}
+*/
+
+func typeCheckExpression(e AST.Expression, env *TypeEnv) TS.Type {
+	if e == nil {
+		return nil
+	}
+
+	switch v := e.(type) {
+	case *AST.ExpressionBoolean:
+		return TS.NewTypeBool()
+	// case *AST.ExpressionCharacter:
+	// return TS.NewTypeChar(true)
+	case *AST.ExpressionInteger:
+		return TS.NewTypeInteger(true, 4)
+	case *AST.ExpressionFloat:
+		return TS.NewTypeFloat(4)
+	case *AST.ExpressionString:
+		return TS.NewTypeString()
+	case *AST.ExpressionVariable:
+		decl := env.get(v.Identifier)
+		return decl.DeclType
+	case *AST.ExpressionBinary:
+		lt := typeCheckExpression(v.Left, env)
+		rt := typeCheckExpression(v.Right, env)
+
+		promotedType := TS.GetPromotedType(v.Operator, lt, rt)
+		if promotedType == nil {
+			panic(fmt.Sprintf("Typechecking error Line %d | Operation %s not supported on Left: %s | Right: %s", v.Operator.Line, v.Operator.Lexeme, lt.String(), rt.String()))
+		}
+
+		return promotedType
+
+	// case *AST.SE_FunctionCall:
+	// return typeCheckFunctionCall(v, env)
+
+	/*
+		case *AST.ExpressionArray:
+			for i, element := range v.Elements {
+				if ref, ok := element.(*AST.ExpressionArray); ok {
+					ref.DeclType = TS.RemoveModifier(v.DeclType)
+				}
+
+				elementType := typeCheckExpression(element, env)
+				if compare, err := TS.TypeStrictCompare(elementType, TS.RemoveModifier(v.DeclType)); !compare {
+					panic(fmt.Sprintf("Element %d: expected %s, got %s | %s", i, TS.RemoveModifier(v.DeclType).String(), elementType.String(), err.Error()))
+				}
+			}
+
+			return v.DeclType
+
+		case *AST.ExpressionLen:
+			switch ev := v.Iterable.(type) {
+			case *AST.ExpressionArray:
+			case *AST.ExpressionString:
+			case *AST.ExpressionIdentifier:
+				evType := typeCheckExpression(ev, env)
+
+				if !evType.IsArray() {
+					panic(fmt.Sprintf("Typechecking error line %d | Builtin Len(%s) identifier: %s %s argument is not iterable", ev.Tok.Line, ev.Tok.Lexeme, ev.Tok.Lexeme, evType.String()))
+				}
+			default:
+				panic(fmt.Sprintf("Typechecking error Line %d | Builtin Len() argument is not iterable %T", v.Iterable))
+			}
+
+			return TS.NewTypeInteger(true, 4)
+	*/
+	case *AST.ExpressionAssignment:
+		lhsType := typeCheckExpression(v.LHS, env)
+		rhsType := typeCheckExpression(v.RHS, env)
+
+		if looselyComparable, err := TS.TypeLooseCompare(lhsType, rhsType); !looselyComparable {
+			panic(fmt.Sprintf("Line %d | Can't assign type %s to type %s | %s", v.Tok.Line, rhsType.String(), lhsType.String(), err.Error()))
+		}
+
+		return lhsType
+	case *AST.ExpressionUnary:
+		return typeCheckExpression(v.Operand, env)
+
+	case *AST.ExpressionGrouping:
+		return typeCheckExpression(v.Expr, env)
+
+	/*
+		case *AST.ExpressionTypeCast:
+			exprType := typeCheckExpression(v.Expr, env)
+			if ok, err := TS.CanExplicitCast(v.CastType, exprType); !ok {
+				panic(fmt.Sprintf("Typechecking error Line %d | Invalid cast to %s from %s | %s", v.Tok.Line, v.CastType.String(), exprType.String(), err.Error()))
+			}
+
+			return v.CastType
+
+		case *AST.ExpressionStruct:
+			structDecl, ok := globalStruct[v.Tok.Lexeme]
+			if !ok {
+				panic("Undefined type: " + v.Tok.Lexeme)
+			}
+
+			argCount := len(v.MemberValues)
+			memberCount := len(structDecl.Members)
+
+			if memberCount != argCount {
+				panic(fmt.Sprintf("expected %d parameter(s), got %d", argCount, memberCount))
+			}
+
+			var memberTypes []TS.Type
+			for i := 0; i < argCount; i++ {
+				member := structDecl.Members[i]
+				argType := typeCheckExpression(v.MemberValues[member.Tok.Lexeme], env)
+
+				if comp, err := TS.CanImplicitCast(member.DeclType, argType); !comp {
+					panic(fmt.Sprintf("Line %d | argument %d: expected %s: %s, got %s | %s", v.Tok.Line, i, member.Tok.Lexeme, member.DeclType.String(), argType.String(), err.Error()))
+				}
+
+				memberTypes = append(memberTypes, member.DeclType)
+			}
+
+			return TS.NewTypeStruct(structDecl.Tok.Lexeme, structDecl.Members)
+
+		case *AST.ExpressionAccessChain:
+			ident := env.get(v.Tok)
+			decl := globalStruct[ident.DeclType.String()]
+
+			accessType := ident.DeclType
+			accessString := ident.Tok.Lexeme
+
+			for i := 0; i < len(v.AccessKeys); i++ {
+				switch ev := v.AccessKeys[i].(type) {
+				case *AST.ExpressionIdentifier:
+					memberName := ev.Tok
+					accessString += "." + memberName.Lexeme
+					if accessType == nil || !accessType.IsStruct() {
+						panic(fmt.Sprintf("Line: %d | undefined struct access: %s", v.Tok.Line, accessString))
+					}
+
+					accessType = decl.MemberLookup[memberName.Lexeme].DeclType
+					decl = globalStruct[accessType.String()]
+
+				case *AST.ExpressionArrayAccess:
+					index, ok := ev.Index.(*AST.ExpressionInteger)
+					if ok {
+						accessString += fmt.Sprintf("[%d]", index.Value)
+					}
+					type_int32 := TS.NewTypeInteger(true, 4)
+
+					identifier, ok := ev.Index.(*AST.ExpressionIdentifier)
+					if ok {
+						// this needs to be compatible not type compare
+						if comp, _ := TS.TypeLooseCompare(typeCheckExpression(identifier, env), type_int32); !comp {
+							panic("Array Index Access is not of type int")
+						}
+
+						accessString += fmt.Sprintf("[%d]", identifier.Tok.Lexeme)
+					}
+
+					acc, ok := ev.Index.(*AST.ExpressionAccessChain)
+					if ok {
+						if comp, _ := TS.TypeLooseCompare(typeCheckExpression(acc, env), type_int32); !comp {
+							panic("Array Index Access is not of type int")
+						}
+
+						accessString += fmt.Sprintf("[...]")
+					}
+
+					cast, ok := ev.Index.(*AST.ExpressionTypeCast)
+					if ok {
+						ct := typeCheckExpression(cast, env)
+						if comp, _ := TS.TypeLooseCompare(ct, type_int32); !comp {
+							panic("Array Index Access is not of type int")
+						}
+
+						accessString += fmt.Sprintf("[...]")
+					}
+
+					if accessType.IsArray() {
+						accessType = TS.RemoveModifier(accessType)
+						decl = globalStruct[accessType.String()]
+					} else {
+						panic(fmt.Sprintf("Line: %d | undefined array access: %s", v.Tok.Line, accessString))
+					}
+				}
+			}
+
+			return accessType
+	*/
+	default:
+		panic(fmt.Sprintf("undefined statement: %T", v))
+	}
+
+	return nil
+}
+
+func typeCheckStatement(s AST.Statement, env *TypeEnv) {
+	switch v := s.(type) {
+	case *AST.StatementExpression:
+		typeCheckExpression(v.Expr, env)
+
+	case *AST.StatementReturn:
+		if v.Expr != nil {
+			globalReturnStatementStack = append(globalReturnStatementStack,
+				StatementTypePair{
+					stmt: v,
+					t:    typeCheckExpression(v.Expr, env),
+				},
+			)
+		}
+
+	/*
+		case *AST.StatementBreak, *AST.StatementContinue:
+			if env.CurrentStatus != IN_LOOP {
+				panic("break statement is not in loop")
+			}
+
+		case *AST.StatementFor:
+			typeCheckDeclaration(v.Initializer, env)
+			condition := typeCheckExpression(v.Condition, env)
+			if _, ok := condition.(*TS.BoolType); !ok {
+				panic("For statement condition doesn't resolve to a bool it resolves to: " + condition.String())
+			}
+
+			typeCheckStatement(v.Increment, env)
+
+			env.CurrentStatus = IN_LOOP
+			for _, node := range v.Block.Body {
+				typeCheckNode(node, env)
+			}
+			env.CurrentStatus = NORMAL
+
+		case *AST.StatementWhile:
+			condition := typeCheckExpression(v.Condition, env)
+			if _, ok := condition.(*TS.BoolType); !ok {
+				panic("For statement condition doesn't resolve to a bool it resolves to: " + condition.String())
+			}
+
+			env.CurrentStatus = IN_LOOP
+			typeCheckStatement(v.Block, env)
+			env.CurrentStatus = NORMAL
+
+		case *AST.StatementIfElse:
+			condition := typeCheckExpression(v.Condition, env)
+			if _, ok := condition.(*TS.BoolType); !ok {
+				panic("For statement condition doesn't resolve to a bool it resolves to: " + condition.String())
+			}
+
+			typeCheckStatement(v.IfBlock, env)
+
+			if v.ElseBlock != nil {
+				typeCheckStatement(v.ElseBlock, env)
+			}
+
+		case *AST.StatementDefer:
+			typeCheckNode(v.DeferredNode.(AST.Node), env)
+	*/
+	case *AST.StatementBlock:
+		for _, node := range v.Body {
+			typeCheckNode(node, env)
+		}
+
+	//case *AST.SE_FunctionCall:
+	//typeCheckFunctionCall(v, env)
+
+	default:
+		panic(fmt.Sprintf("undefined statement: %T", v))
+
+	}
+}
+
+func typeCheckDeclaration(decl AST.Declaration, env *TypeEnv) {
+	switch v := decl.(type) {
+	case *AST.DeclarationVariable:
+		rhsType := typeCheckExpression(v.RHS, env)
+		// NOTE(Jovanni): This is actually patching the ast to infer the type (can be very tricky...)
+		/*
+			if v.DeclType == nil {
+				v.DeclType = rhsType
+			}
+		*/
+
+		env.set(v.Tok, v)
+		if v.DeclType != nil {
+			if implicitlyCastable, err := TS.CanImplicitCast(v.DeclType, rhsType); !implicitlyCastable {
+				panic(fmt.Sprintf("Line: %d | Can't assign type %s to type %s | %s", v.Tok.Line, rhsType.String(), v.DeclType.String(), err.Error()))
+			}
+		}
+	case *AST.DeclarationFunction:
+		functionType := v.DeclType.(*TS.FunctionType)
+
+		if _, ok := globalFunctions[v.Tok.Lexeme]; ok {
+			panic("Attempting to redeclare function " + v.Tok.Lexeme)
+		} else {
+			globalFunctions[v.Tok.Lexeme] = v
+		}
+
+		funcEnv := NewTypeEnv(env)
+		for _, param := range functionType.Params {
+			funcEnv.set(param.Tok, &AST.DeclarationVariable{
+				Tok:      param.Tok,
+				DeclType: param.DeclType,
+				RHS:      nil,
+			})
+		}
+
+		returnType := functionType.ReturnType
+		_, isReturnTypeVoid := functionType.ReturnType.(*TS.VoidType)
+		hasReturnType := false
+		if len(v.Block.Body) > 0 {
+			_, hasReturnType = v.Block.Body[len(v.Block.Body)-1].(*AST.StatementReturn)
+		}
+
+		if !hasReturnType && !isReturnTypeVoid {
+			panic(fmt.Sprintf("%s body is missing a return statement or it is not the last statement in the body", functionType.String()))
+		}
+
+		for _, node := range v.Block.Body {
+			typeCheckNode(node, funcEnv)
+			if r, ok := node.(*AST.StatementReturn); ok && (r.Expr == nil && !isReturnTypeVoid) {
+				panic(fmt.Sprintf("Line %d | %s() has a return without expression", r.Tok.Line, v.Tok.Lexeme))
+			}
+
+			for _, pair := range globalReturnStatementStack {
+				if isReturnTypeVoid {
+					panic(fmt.Sprintf("Attempting to return expression in %s() with return type void", v.Tok.Lexeme))
+				}
+
+				if implicitlyCastable, err := TS.CanImplicitCast(returnType, pair.t); !implicitlyCastable {
+					panic(fmt.Sprintf("Line %d | %s() has a return type of %s but returns a %s | %s", pair.stmt.Tok.Line, v.Tok.Lexeme, returnType.String(), pair.t.String(), err.Error()))
+				}
+			}
+			globalReturnStatementStack = nil
+		}
+	/*
+		case *AST.DeclarationStruct:
+			if _, ok := globalStruct[v.Tok.Lexeme]; ok {
+				panic("Attempting to redeclare type: " + v.Tok.Lexeme)
+			} else {
+				globalStruct[v.Tok.Lexeme] = v
+			}
+	*/
+
+	default:
+		panic(fmt.Sprintf("undefined declaration: %T", v))
+	}
+}
+
+func typeCheckNode(node AST.Node, env *TypeEnv) {
+	switch v := node.(type) {
+	case AST.Statement:
+		typeCheckStatement(v, env)
+	case AST.Expression:
+		typeCheckExpression(v, env)
+	case AST.Declaration:
+		typeCheckDeclaration(v, env)
+	}
+}
+
+func TypeCheckProgram(program AST.Program) {
+	globalEnv := NewTypeEnv(nil)
+	globalFunctions = make(map[string]*AST.DeclarationFunction)
+
+	/*
+		globalStruct = make(map[string]*AST.DeclarationStruct)
+
+		{ // Adding builtin structs
+			typeU8Star := TS.AddPointer(TS.NewTypeInteger(false, 1))
+			typeU64 := TS.NewTypeInteger(false, 8)
+			members := []TS.Member{
+				{
+					Token.CreateToken(Token.IDENTIFIER, "data", 0),
+					typeU8Star,
+				},
+				{
+					Token.CreateToken(Token.IDENTIFIER, "length", 0),
+					typeU64,
+				},
+			}
+
+			memberLookup := make(map[string]TS.Member)
+			for _, member := range members {
+				memberLookup[member.Tok.Lexeme] = member
+			}
+
+			globalStruct["String"] = &AST.DeclarationStruct{
+				Token.CreateToken(Token.IDENTIFIER, "String", 0),
+				members,
+				memberLookup,
+			}
+		}
+	*/
+
+	for _, decl := range program.Declarations {
+		typeCheckDeclaration(decl, globalEnv)
+	}
+}

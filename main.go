@@ -9,6 +9,7 @@ import (
 	"ion/go/v2/IR"
 	"ion/go/v2/Lexer"
 	"ion/go/v2/Parser"
+	"ion/go/v2/SemanticAnalysis"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,6 +21,8 @@ import (
 func compileFile(inputPath string, outputAsm string) error {
 	tokenStream := Lexer.GenerateTokenStream(inputPath)
 	program := Parser.ParseProgram(tokenStream)
+	SemanticAnalysis.TypeCheckProgram(program)
+	// table := Symbol.CreateSymbolTable(nil)
 	ir := IR.GenerateIntermediateRepresentation(program)
 	assembly := Codegen.GenerateAssemblyProgram(ir)
 	finalStackOffset := 0

@@ -36,13 +36,38 @@ func (parser *Parser) parseStatementBlock() AST.Statement {
 	}
 }
 
+func (parser *Parser) parseAssignmentStatement() AST.Statement {
+	tok := parser.peekNthToken(0)
+	lhs := parser.parseExpression()
+	parser.expect(Token.EQUALS)
+	rhs := parser.parseExpression()
+	parser.expect(Token.SEMI_COLON)
+	/*
+		if !parser.ctx.ParsingForIncrement {
+			parser.expect(Token.SEMI_COLON)
+		}
+	*/
+
+	return &AST.StatementExpression{
+		Tok: tok,
+		Expr: &AST.ExpressionAssignment{
+			Tok: tok,
+			LHS: lhs,
+			RHS: rhs,
+		},
+	}
+}
+
 func (parser *Parser) parseStatement() AST.Statement {
 	current := parser.peekNthToken(0)
+	// next := parser.peekNthToken(1)
 
 	if current.Kind == Token.LEFT_CURLY {
 		return parser.parseStatementBlock()
 	} else if current.Kind == Token.RETURN {
 		return parser.parseStatementReturn()
+	} else if current.Kind == Token.IDENTIFIER {
+		return parser.parseAssignmentStatement()
 	}
 
 	panic("INVALID STATEMENT!")

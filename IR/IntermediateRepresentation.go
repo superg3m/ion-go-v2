@@ -40,12 +40,32 @@ func emitFromStatement(stmt AST.Statement, instructions []Instruction) []Instruc
 	return instructions
 }
 
+func emitFromDeclaration(decl AST.Declaration, instructions []Instruction) []Instruction {
+	switch v := decl.(type) {
+	case *AST.DeclarationVariable:
+		var value Value
+		instructions, value = emitFromExpression(v.RHS, instructions)
+		destination := NewVariable(v.Tok.Lexeme)
+		instructions = append(instructions, NewCopyInstruction(value, destination))
+	case *AST.DeclarationFunction:
+		for _, node := range v.Block.Body {
+			instructions = append(instructions, emitFromNode(node, instructions)...)
+		}
+	default:
+		panic(fmt.Sprintf("Unknown instruction %T", v))
+	}
+
+	return instructions
+}
+
 func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Instruction, Value) {
 	switch v := expr.(type) {
 	case *AST.ExpressionGrouping:
 		return emitFromExpression(v.Expr, instructions)
 	case *AST.ExpressionInteger:
 		return instructions, NewConstantValue(v.Value)
+	case *AST.ExpressionVariable:
+		return instructions, NewVariable(v.Identifier.Lexeme)
 	case *AST.ExpressionUnary:
 		var source Value
 		instructions, source = emitFromExpression(v.Operand, instructions)
@@ -113,6 +133,8 @@ func emitFromNode(node AST.Node, instructions []Instruction) []Instruction {
 		instructions, _ = emitFromExpression(v, instructions)
 	case AST.Statement:
 		return emitFromStatement(v, instructions)
+	case AST.Declaration:
+		return emitFromDeclaration(v, instructions)
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}
@@ -124,14 +146,8 @@ func GenerateIntermediateRepresentation(program AST.Program) Program {
 	main := FunctionDefinition{}
 	main.Identifier = "main"
 
-	decl := program.Declarations[0]
-	switch v := decl.(type) {
-	case *AST.DeclarationFunction:
-		for _, node := range v.Block.Body {
-			main.Instructions = emitFromNode(node, main.Instructions)
-		}
-	default:
-		panic(fmt.Sprintf("Unknown instruction %T", v))
+	for _, decl := range program.Declarations {
+		main.Instructions = emitFromDeclaration(decl, main.Instructions)
 	}
 
 	return Program{

@@ -38,6 +38,16 @@ type ExpressionBinary struct {
 	Right    Expression
 }
 
+type ExpressionVariable struct {
+	Identifier Token.Token
+}
+
+type ExpressionAssignment struct {
+	Tok Token.Token
+	LHS Expression
+	RHS Expression
+}
+
 func (*ExpressionBoolean) isNode()       {}
 func (*ExpressionBoolean) isExpression() {}
 
@@ -58,3 +68,9 @@ func (*ExpressionUnary) isExpression() {}
 
 func (*ExpressionBinary) isNode()       {}
 func (*ExpressionBinary) isExpression() {}
+
+func (*ExpressionVariable) isNode()       {}
+func (*ExpressionVariable) isExpression() {}
+
+func (*ExpressionAssignment) isNode()       {}
+func (*ExpressionAssignment) isExpression() {}

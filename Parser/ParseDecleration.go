@@ -2,26 +2,50 @@ package Parser
 
 import (
 	"ion/go/v2/AST"
+	"ion/go/v2/TS"
 	"ion/go/v2/Token"
 )
 
 func (parser *Parser) parseFunctionDeclaration() AST.Declaration {
-	parser.expect(Token.IDENTIFIER) // return_type
+	returnType := parser.parseType()
 	ident := parser.expect(Token.IDENTIFIER)
-	parser.expect(Token.LEFT_PAREN)
-	parser.expect(Token.RIGHT_PAREN)
+	params := parser.parseParameters()
 	block := parser.parseStatementBlock().(*AST.StatementBlock)
 
+	declType := TS.NewTypeFunction(returnType, params)
 	return &AST.DeclarationFunction{
-		Tok:   ident,
-		Block: block,
+		DeclType: declType,
+		Tok:      ident,
+		Block:    block,
+	}
+}
+
+func (parser *Parser) parseVariableDeclaration() AST.Declaration {
+	returnType := parser.parseType()
+	ident := parser.expect(Token.IDENTIFIER)
+
+	var rhs AST.Expression
+	if parser.peekNthToken(0).Kind == Token.EQUALS {
+		parser.expect(Token.EQUALS)
+		rhs = parser.parseExpression()
+	}
+	parser.expect(Token.SEMI_COLON)
+
+	return &AST.DeclarationVariable{
+		DeclType: returnType,
+		Tok:      ident,
+		RHS:      rhs,
 	}
 }
 
 func (parser *Parser) parseDeclaration() AST.Declaration {
 	current := parser.peekNthToken(0)
+	// next := parser.peekNthToken(1)
+	next2 := parser.peekNthToken(2)
 
-	if current.Kind == Token.IDENTIFIER {
+	if current.Kind == Token.IDENTIFIER && (next2.Kind == Token.EQUALS || next2.Kind == Token.SEMI_COLON) {
+		return parser.parseVariableDeclaration()
+	} else if current.Kind == Token.IDENTIFIER {
 		return parser.parseFunctionDeclaration()
 	}
 

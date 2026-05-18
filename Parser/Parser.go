@@ -3,6 +3,7 @@ package Parser
 import (
 	"fmt"
 	"ion/go/v2/AST"
+	"ion/go/v2/TS"
 	"ion/go/v2/Token"
 )
 
@@ -50,6 +51,78 @@ func (parser *Parser) consumeOnMatch(expectedType Token.TokenType) bool {
 
 func (parser *Parser) previousToken() Token.Token {
 	return parser.tokens[parser.current-1]
+}
+
+func (parser *Parser) parseType() TS.Type {
+	var countArray []int
+	for parser.peekNthToken(0).Kind == Token.LEFT_BRACKET {
+		parser.consumeOnMatch(Token.LEFT_BRACKET)
+
+		if count, ok := parser.parseExpression().(*AST.ExpressionInteger); ok {
+			countArray = append(countArray, count.Value)
+		} else {
+			countArray = append(countArray, 0) // this makes it a inferred size array,
+			// very hacky not good, but what are you gonna do, sometimes you just gotta do the thing.
+		}
+		parser.consumeOnMatch(Token.RIGHT_BRACKET)
+	}
+
+	pointerDepth := 0
+	for parser.peekNthToken(0).Kind == Token.STAR {
+		parser.consumeOnMatch(Token.STAR)
+
+		pointerDepth += 1
+	}
+
+	next := parser.peekNthToken(0)
+	if next.Kind != Token.IDENTIFIER {
+		return nil
+	}
+
+	dataTypeToken := parser.expect(Token.IDENTIFIER)
+	var retType TS.Type
+	if v, ok := TS.GetBuiltin(dataTypeToken.Lexeme); ok {
+		retType = v
+	} else {
+		parser.reportError(fmt.Sprintf("Line: %d, Unrecognized type: %s", dataTypeToken.Line, dataTypeToken.Lexeme))
+	}
+	/*
+		else if structDecl, ok2 := parser.ctx.ParsedStructDeclaration[dataTypeToken.Lexeme]; ok2 {
+			retType = TS.NewTypeStruct(dataTypeToken.Lexeme, structDecl.Members)
+		}
+	*/
+
+	for i := 0; i < pointerDepth; i++ {
+		retType = TS.AddPointer(retType)
+	}
+
+	for _, count := range countArray {
+		retType = TS.AddStaticArray(retType, count)
+	}
+
+	return retType
+}
+
+func (parser *Parser) parseParameters() []TS.Parameter {
+	var params []TS.Parameter
+
+	parser.expect(Token.LEFT_PAREN)
+	for !parser.consumeOnMatch(Token.RIGHT_PAREN) {
+		param := parser.expect(Token.IDENTIFIER)
+		parser.expect(Token.COLON)
+		dataType := parser.parseType()
+
+		params = append(params, TS.Parameter{
+			Tok:      param,
+			DeclType: dataType,
+		})
+
+		if parser.peekNthToken(0).Kind != Token.RIGHT_PAREN {
+			parser.expect(Token.COMMA)
+		}
+	}
+
+	return params
 }
 
 func ParseProgram(tokens []Token.Token) AST.Program {

@@ -21,6 +21,11 @@ func (parser *Parser) parsePrimary() AST.Expression {
 		return &AST.ExpressionFloat{Value: float32(num)}
 	} else if parser.consumeOnMatch(Token.STRING_LITERAL) {
 		return &AST.ExpressionString{Value: current.Lexeme[1 : len(current.Lexeme)-1]}
+	} else if parser.consumeOnMatch(Token.IDENTIFIER) {
+		// next := parser.peekNthToken(0)
+		return &AST.ExpressionVariable{
+			Identifier: current,
+		}
 	} else if parser.consumeOnMatch(Token.LEFT_PAREN) {
 		expr := parser.parseExpression()
 		if expr != nil {
@@ -176,5 +181,9 @@ func (parser *Parser) parseLogicalOrExpression() AST.Expression {
 
 // <Expression> ::= <logical_or>
 func (parser *Parser) parseExpression() AST.Expression {
+	// current := parser.peekNthToken(0)
+	// next := parser.peekNthToken(1)
+	// next2 := parser.peekNthToken(2)
+
 	return parser.parseLogicalOrExpression()
 }
