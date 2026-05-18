@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"ion/go/v2/AssemblyAST"
 	"ion/go/v2/AssemblyEmitter"
 	"ion/go/v2/Codegen"
@@ -166,28 +167,34 @@ func runTest(path string) bool {
 
 func main() {
 	dir := "./Test"
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		panic(err)
-	}
 
 	total := 0
 	passed := 0
 
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
+	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
 		}
 
-		if filepath.Ext(entry.Name()) != ".c" {
-			continue
+		if d.IsDir() {
+			return nil
+		}
+
+		if filepath.Ext(path) != ".c" {
+			return nil
 		}
 
 		total++
-		path := filepath.Join(dir, entry.Name())
+
 		if runTest(path) {
 			passed++
 		}
+
+		return nil
+	})
+
+	if err != nil {
+		panic(err)
 	}
 
 	fmt.Println("====================================")

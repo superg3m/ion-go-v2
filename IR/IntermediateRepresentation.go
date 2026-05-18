@@ -64,6 +64,7 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 			instructions = append(instructions, NewConditionalJumpInstruction(zeroLabel, left, true, false))
 			instructions, right = emitFromExpression(v.Right, instructions)
 			instructions = append(instructions, NewLabelInstruction(oneLabel))
+			instructions = append(instructions, NewConditionalJumpInstruction(zeroLabel, right, true, false))
 			instructions = append(instructions, NewCopyInstruction(NewConstantValue(1), result))
 			instructions = append(instructions, NewJumpInstruction(endLabel))
 
