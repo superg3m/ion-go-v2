@@ -12,7 +12,7 @@ func (parser *Parser) parsePrimary() AST.Expression {
 	current := parser.peekNthToken(0)
 	if parser.consumeOnMatch(Token.INTEGER_LITERAL) {
 		num, _ := strconv.Atoi(current.Lexeme)
-		return &AST.ExpressionInteger{Value: num}
+		return &AST.ExpressionInteger{Value: num, Tok: current}
 	} else if parser.consumeOnMatch(Token.BOOLEAN_LITERAL) {
 		b := current.Lexeme == "true"
 		return &AST.ExpressionBoolean{Value: b}

@@ -66,7 +66,7 @@ func emitFromDeclaration(decl AST.Declaration, instructions []Instruction) []Ins
 		instructions = append(instructions, NewCopyInstruction(value, destination))
 	case *AST.DeclarationFunction:
 		for _, node := range v.Block.Body {
-			instructions = append(instructions, emitFromNode(node, instructions)...)
+			instructions = append(instructions, emitFromNode(node)...)
 		}
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", v))
@@ -144,14 +144,15 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 	return instructions, nil
 }
 
-func emitFromNode(node AST.Node, instructions []Instruction) []Instruction {
+func emitFromNode(node AST.Node) []Instruction {
+	var instructions []Instruction
 	switch v := node.(type) {
 	case AST.Expression:
 		instructions, _ = emitFromExpression(v, instructions)
 	case AST.Statement:
-		return emitFromStatement(v, instructions)
+		instructions = emitFromStatement(v, instructions)
 	case AST.Declaration:
-		return emitFromDeclaration(v, instructions)
+		instructions = emitFromDeclaration(v, instructions)
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}
@@ -175,7 +176,7 @@ func emitDefinitionFromDeclaration(decl AST.Declaration) Definition {
 		}
 	case *AST.DeclarationFunction:
 		for _, node := range v.Block.Body {
-			instructions = append(instructions, emitFromNode(node, instructions)...)
+			instructions = append(instructions, emitFromNode(node)...)
 		}
 
 		return &FunctionDefinition{

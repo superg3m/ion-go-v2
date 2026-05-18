@@ -166,7 +166,7 @@ func runTest(path string) bool {
 }
 
 func main() {
-	dir := "./Test"
+	dir := "./Regression"
 
 	total := 0
 	passed := 0

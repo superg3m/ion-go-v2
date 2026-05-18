@@ -718,9 +718,17 @@ func CanImplicitCast(caster Type, castee Type) (bool, error) {
 
 	i1, isCasterInteger := caster.(*IntegerType)
 	f1, isCasterFloat := caster.(*FloatType)
+	_, isCasterBool := caster.(*BoolType)
 
 	i2, isCasteeInteger := castee.(*IntegerType)
 	f2, isCasteeFloat := castee.(*FloatType)
+	_, isCasteeBool := castee.(*BoolType)
+
+	if isCasterBool && isCasteeInteger {
+		return true, nil
+	} else if isCasterInteger && isCasteeBool {
+		return true, nil
+	}
 
 	if isCasterInteger && isCasteeFloat {
 		return i1.Bytes >= f2.Bytes, fmt.Errorf("can't perform narrowing implicit cast because of sign mismatch '%s', '%s'", i1.String(), f2.String())
@@ -793,47 +801,55 @@ func getTypeKind(t Type) TypeKind {
 func GetPromotedType(op Token.Token, leftType Type, rightType Type) Type {
 	typeS32 := NewTypeInteger(true, 4)
 	typeF32 := NewTypeFloat(4)
-	typeString := NewTypeString()
+	// typeString := NewTypeString()
 	typeBool := NewTypeBool()
 
 	var typeMap = map[BinaryQuery]Type{
-		{"+", INTEGER, FLOAT}:   typeF32,
-		{"-", INTEGER, FLOAT}:   typeF32,
-		{"*", INTEGER, FLOAT}:   typeF32,
-		{"/", INTEGER, FLOAT}:   typeF32,
 		{"%", INTEGER, INTEGER}: typeS32,
-
-		{"<", INTEGER, FLOAT}:  typeBool,
-		{"<=", INTEGER, FLOAT}: typeBool,
-		{">", INTEGER, FLOAT}:  typeBool,
-		{">=", INTEGER, FLOAT}: typeBool,
-
-		{"+", STRING, STRING}:  typeString,
-		{"+", STRING, INTEGER}: typeString,
-		{"+", STRING, FLOAT}:   typeString,
-
-		{"||", BOOL, BOOL}: typeBool,
-		{"&&", BOOL, BOOL}: typeBool,
 	}
 
 	arithmeticOperators := []string{"+", "-", "*", "/"}
 	for _, operator := range arithmeticOperators {
 		typeMap[BinaryQuery{operator, INTEGER, INTEGER}] = typeS32
 		typeMap[BinaryQuery{operator, FLOAT, FLOAT}] = typeF32
+		typeMap[BinaryQuery{operator, BOOL, BOOL}] = typeS32
+
+		typeMap[BinaryQuery{operator, INTEGER, BOOL}] = typeS32
+		typeMap[BinaryQuery{operator, INTEGER, FLOAT}] = typeF32
+	}
+
+	logicalOperators := []string{"&&", "||"}
+	for _, operator := range logicalOperators {
+		typeMap[BinaryQuery{operator, INTEGER, INTEGER}] = typeS32
+		typeMap[BinaryQuery{operator, FLOAT, FLOAT}] = typeF32
+		typeMap[BinaryQuery{operator, BOOL, BOOL}] = typeS32
+
+		typeMap[BinaryQuery{operator, INTEGER, BOOL}] = typeS32
+		typeMap[BinaryQuery{operator, INTEGER, FLOAT}] = typeS32
 	}
 
 	comparisonOperators := []string{"<", "<=", ">", ">="}
 	for _, operator := range comparisonOperators {
 		typeMap[BinaryQuery{operator, INTEGER, INTEGER}] = typeBool
 		typeMap[BinaryQuery{operator, FLOAT, FLOAT}] = typeBool
+		typeMap[BinaryQuery{operator, BOOL, BOOL}] = typeBool
+
+		typeMap[BinaryQuery{operator, INTEGER, FLOAT}] = typeBool
+		typeMap[BinaryQuery{operator, INTEGER, BOOL}] = typeBool
 	}
 
 	equalityOperators := []string{"==", "!="}
 	for _, operator := range equalityOperators {
 		typeMap[BinaryQuery{operator, INTEGER, INTEGER}] = typeBool
 		typeMap[BinaryQuery{operator, FLOAT, FLOAT}] = typeBool
-		typeMap[BinaryQuery{operator, STRING, STRING}] = typeBool
+		// typeMap[BinaryQuery{operator, STRING, STRING}] = typeBool
+		typeMap[BinaryQuery{operator, INTEGER, BOOL}] = typeBool
 		typeMap[BinaryQuery{operator, BOOL, BOOL}] = typeBool
+	}
+
+	bitwiseOperators := []string{"&", "|", "<<", ">>", "^"}
+	for _, operator := range bitwiseOperators {
+		typeMap[BinaryQuery{operator, INTEGER, INTEGER}] = typeBool
 	}
 
 	leftTypeKind := getTypeKind(leftType)
