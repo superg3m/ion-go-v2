@@ -2,7 +2,6 @@ package AssemblyAST
 
 import (
 	"fmt"
-	"ion/go/v2/IR"
 	"ion/go/v2/TS"
 	"ion/go/v2/Token"
 )
@@ -71,19 +70,6 @@ type Pseudo struct {
 
 type Stack struct {
 	Offset int
-}
-
-func NewOperand(value IR.Value) Operand {
-	switch v := value.(type) {
-	case *IR.Constant:
-		return &Immediate{Value: v.Value}
-	case *IR.Variable:
-		return &Pseudo{DeclType: v.DeclType, Tok: v.Tok}
-	default:
-		panic(fmt.Sprintf("Unknown instruction %T", v))
-	}
-
-	return nil
 }
 
 func NewRegisterOperand(register Register) Operand {

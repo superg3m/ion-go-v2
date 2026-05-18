@@ -33,6 +33,11 @@ const (
 	BITWISE_RS    = "BITWISE_RS"    // ">>"
 	BITWISE_XOR   = "BITWISE_XOR"   // "^"
 
+	PLUS_EQUALS   = "PLUS_EQUALS"   // "+="
+	MINUS_EQUALS  = "MINUS_EQUALS"  // "-="
+	STAR_EQUALS   = "STAR_EQUALS"   // "*="
+	DIVIDE_EQUALS = "DIVIDE_EQUALS" // "/="
+
 	// SYNTAX MULTIPLE CHARACTERS
 	EQUALS_EQUALS       = "EQUALS_EQUALS"       // "=="
 	NOT_EQUALS          = "NOT_EQUALS"          // "!="
@@ -79,6 +84,8 @@ type Token struct {
 func CreateToken(kind TokenType, lexeme string, line int) Token {
 	return Token{kind, lexeme, line}
 }
+
+// IsCompoundAssignment
 
 func GetKeywordToken(input string) (TokenType, bool) {
 	var m = map[string]TokenType{
@@ -150,6 +157,10 @@ func GetSyntaxToken(input string) (TokenType, bool) {
 		"&&": LOGICAL_AND,
 		"||": LOGICAL_OR,
 		"->": RIGHT_ARROW,
+		"+=": PLUS_EQUALS,
+		"-=": MINUS_EQUALS,
+		"*=": STAR_EQUALS,
+		"/=": DIVIDE_EQUALS,
 	}
 
 	token, ok := m[input]

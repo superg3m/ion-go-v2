@@ -40,12 +40,12 @@ func (parser *Parser) parseVariableDeclaration() AST.Declaration {
 
 func (parser *Parser) parseDeclaration() AST.Declaration {
 	current := parser.peekNthToken(0)
-	// next := parser.peekNthToken(1)
+	next := parser.peekNthToken(1)
 	next2 := parser.peekNthToken(2)
 
-	if current.Kind == Token.IDENTIFIER && (next2.Kind == Token.EQUALS || next2.Kind == Token.SEMI_COLON) {
+	if current.Kind == Token.IDENTIFIER && next.Kind == Token.IDENTIFIER && (next2.Kind == Token.EQUALS || next2.Kind == Token.SEMI_COLON) {
 		return parser.parseVariableDeclaration()
-	} else if current.Kind == Token.IDENTIFIER {
+	} else if current.Kind == Token.IDENTIFIER && next.Kind == Token.IDENTIFIER && next2.Kind == Token.LEFT_PAREN {
 		return parser.parseFunctionDeclaration()
 	}
 

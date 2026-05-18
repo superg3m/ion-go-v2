@@ -3,6 +3,7 @@ CHANGELOG.txt
 ----------- Version: 0.0.7 -----------
 - Type System, Typechecking
 - Major deviation from the book
+- ExpressionAssignment
 - SymbolTable
 
 ----------- Version: 0.0.6 -----------

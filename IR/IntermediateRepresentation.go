@@ -50,6 +50,8 @@ func emitFromStatement(stmt AST.Statement, instructions []Instruction) []Instruc
 		var value Value
 		instructions, value = emitFromExpression(v.Expr, instructions)
 		instructions = append(instructions, NewReturnInstruction(value))
+	case *AST.StatementExpression:
+		instructions, _ = emitFromExpression(v.Expr, instructions)
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}
@@ -88,6 +90,12 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 		instructions, source = emitFromExpression(v.Operand, instructions)
 		destination := NewVariable(uniqueTempVariableToken(v.Operator), source.GetDeclType())
 		instructions = append(instructions, NewUnaryInstruction(v.Operator.Lexeme, source, destination))
+		return instructions, destination
+	case *AST.ExpressionAssignment:
+		var source Value
+		instructions, source = emitFromExpression(v.RHS, instructions)
+		destination := NewVariable(v.LHSIdentifierToken, source.GetDeclType())
+		instructions = append(instructions, NewCopyInstruction(source, destination))
 		return instructions, destination
 	case *AST.ExpressionBinary:
 		var left, right Value

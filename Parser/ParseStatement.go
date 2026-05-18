@@ -51,23 +51,48 @@ func (parser *Parser) parseAssignmentStatement() AST.Statement {
 	return &AST.StatementExpression{
 		Tok: tok,
 		Expr: &AST.ExpressionAssignment{
-			Tok: tok,
-			LHS: lhs,
-			RHS: rhs,
+			LHSIdentifierToken: tok,
+			LHS:                lhs,
+			RHS:                rhs,
+		},
+	}
+}
+
+func (parser *Parser) parseCompoundAssignmentStatement() AST.Statement {
+	tok := parser.peekNthToken(0)
+
+	lhs := parser.parseExpression()
+	parser.expect(Token.EQUALS)
+	rhs := parser.parseExpression()
+	parser.expect(Token.SEMI_COLON)
+	/*
+		if !parser.ctx.ParsingForIncrement {
+			parser.expect(Token.SEMI_COLON)
+		}
+	*/
+
+	return &AST.StatementExpression{
+		Tok: tok,
+		Expr: &AST.ExpressionAssignment{
+			LHSIdentifierToken: tok,
+			LHS:                lhs,
+			RHS:                rhs,
 		},
 	}
 }
 
 func (parser *Parser) parseStatement() AST.Statement {
 	current := parser.peekNthToken(0)
-	// next := parser.peekNthToken(1)
+	next := parser.peekNthToken(1)
 
 	if current.Kind == Token.LEFT_CURLY {
 		return parser.parseStatementBlock()
 	} else if current.Kind == Token.RETURN {
 		return parser.parseStatementReturn()
-	} else if current.Kind == Token.IDENTIFIER {
+	} else if current.Kind == Token.IDENTIFIER && next.Kind == Token.EQUALS {
 		return parser.parseAssignmentStatement()
+	} else if current.Kind == Token.SEMI_COLON {
+
 	}
 
 	panic("INVALID STATEMENT!")

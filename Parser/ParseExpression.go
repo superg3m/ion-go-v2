@@ -7,9 +7,22 @@ import (
 	"strconv"
 )
 
+func (parser *Parser) parseLValue() AST.Expression {
+	current := parser.peekNthToken(0)
+	if parser.consumeOnMatch(Token.IDENTIFIER) {
+		return &AST.ExpressionVariable{
+			Tok:      current,
+			DeclType: nil, // NOTE(Jovanni): The type checker will patch this
+		}
+	}
+
+	return nil
+}
+
 // <Primary>    ::= <integer> | <float> | <boolean> | <string> | '(' <Expression> ')'
 func (parser *Parser) parsePrimary() AST.Expression {
 	current := parser.peekNthToken(0)
+	next := parser.peekNthToken(1)
 	if parser.consumeOnMatch(Token.INTEGER_LITERAL) {
 		num, _ := strconv.Atoi(current.Lexeme)
 		return &AST.ExpressionInteger{Value: num, Tok: current}
@@ -21,13 +34,18 @@ func (parser *Parser) parsePrimary() AST.Expression {
 		return &AST.ExpressionFloat{Value: float32(num)}
 	} else if parser.consumeOnMatch(Token.STRING_LITERAL) {
 		return &AST.ExpressionString{Value: current.Lexeme[1 : len(current.Lexeme)-1]}
-	} else if parser.consumeOnMatch(Token.IDENTIFIER) {
-		// next := parser.peekNthToken(0)
+	} else if current.Kind == Token.IDENTIFIER && next.Kind == Token.EQUALS {
+		lhs := parser.parseLValue()
+		parser.expect(Token.EQUALS)
+		rhs := parser.parseExpression()
 
-		return &AST.ExpressionVariable{
-			Tok:      current,
-			DeclType: nil, // NOTE(Jovanni): The type checker will patch this
+		return &AST.ExpressionAssignment{
+			LHSIdentifierToken: current,
+			LHS:                lhs,
+			RHS:                rhs,
 		}
+	} else if current.Kind == Token.IDENTIFIER {
+		return parser.parseLValue()
 	} else if parser.consumeOnMatch(Token.LEFT_PAREN) {
 		expr := parser.parseExpression()
 		if expr != nil {

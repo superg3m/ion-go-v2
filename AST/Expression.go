@@ -8,6 +8,7 @@ import (
 type Expression interface {
 	Node
 	isExpression()
+	GetDeclType() TS.Type
 }
 
 type ExpressionBoolean struct {
@@ -48,34 +49,61 @@ type ExpressionVariable struct {
 }
 
 type ExpressionAssignment struct {
-	Tok Token.Token
-	LHS Expression
-	RHS Expression
+	LHSIdentifierToken Token.Token
+	LHS                Expression
+	RHS                Expression
 }
 
 func (*ExpressionBoolean) isNode()       {}
 func (*ExpressionBoolean) isExpression() {}
+func (*ExpressionBoolean) GetDeclType() TS.Type {
+	return TS.NewTypeBool()
+}
 
 func (*ExpressionInteger) isNode()       {}
 func (*ExpressionInteger) isExpression() {}
+func (*ExpressionInteger) GetDeclType() TS.Type {
+	return TS.NewTypeInteger(true, 4)
+}
 
 func (*ExpressionFloat) isNode()       {}
 func (*ExpressionFloat) isExpression() {}
+func (*ExpressionFloat) GetDeclType() TS.Type {
+	return TS.NewTypeFloat(4)
+}
 
 func (*ExpressionString) isNode()       {}
 func (*ExpressionString) isExpression() {}
+func (*ExpressionString) GetDeclType() TS.Type {
+	return TS.NewTypeString()
+}
 
 func (*ExpressionGrouping) isNode()       {}
 func (*ExpressionGrouping) isExpression() {}
+func (g *ExpressionGrouping) GetDeclType() TS.Type {
+	return g.Expr.GetDeclType()
+}
 
 func (*ExpressionUnary) isNode()       {}
 func (*ExpressionUnary) isExpression() {}
+func (u *ExpressionUnary) GetDeclType() TS.Type {
+	return u.Operand.GetDeclType()
+}
 
 func (*ExpressionBinary) isNode()       {}
 func (*ExpressionBinary) isExpression() {}
+func (b *ExpressionBinary) GetDeclType() TS.Type {
+	return b.Left.GetDeclType()
+}
 
 func (*ExpressionVariable) isNode()       {}
 func (*ExpressionVariable) isExpression() {}
+func (v *ExpressionVariable) GetDeclType() TS.Type {
+	return v.DeclType
+}
 
 func (*ExpressionAssignment) isNode()       {}
 func (*ExpressionAssignment) isExpression() {}
+func (a *ExpressionAssignment) GetDeclType() TS.Type {
+	return a.LHS.GetDeclType()
+}

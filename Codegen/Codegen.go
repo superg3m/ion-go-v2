@@ -7,6 +7,19 @@ import (
 	"ion/go/v2/Symbol"
 )
 
+func newOperand(value IR.Value) AssemblyAST.Operand {
+	switch v := value.(type) {
+	case *IR.Constant:
+		return &AssemblyAST.Immediate{Value: v.Value}
+	case *IR.Variable:
+		return &AssemblyAST.Pseudo{DeclType: v.DeclType, Tok: v.Tok}
+	default:
+		panic(fmt.Sprintf("Unknown instruction %T", v))
+	}
+
+	return nil
+}
+
 func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 	zeroOperand := AssemblyAST.NewImmediateOperand(0)
 	// oneOperand := AssemblyAST.NewImmediateOperand(1)
@@ -15,11 +28,11 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 	switch v := inst.(type) {
 
 	case *IR.Return:
-		instructions = append(instructions, AssemblyAST.NewMoveInstruction(AssemblyAST.NewOperand(v.Value), AssemblyAST.NewRegisterOperand(AssemblyAST.RAX)))
+		instructions = append(instructions, AssemblyAST.NewMoveInstruction(newOperand(v.Value), AssemblyAST.NewRegisterOperand(AssemblyAST.RAX)))
 		instructions = append(instructions, AssemblyAST.NewReturnInstruction())
 	case *IR.Unary:
-		destination := AssemblyAST.NewOperand(v.Destination)
-		source := AssemblyAST.NewOperand(v.Source)
+		destination := newOperand(v.Destination)
+		source := newOperand(v.Source)
 		if v.Operator == "!" {
 			instructions = append(instructions, AssemblyAST.NewCompareInstruction(zeroOperand, source))
 			instructions = append(instructions, AssemblyAST.NewMoveInstruction(zeroOperand, destination))
@@ -31,9 +44,9 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 		instructions = append(instructions, AssemblyAST.NewMoveInstruction(source, destination))
 		instructions = append(instructions, AssemblyAST.NewUnaryInstruction(v.Operator, destination))
 	case *IR.Binary:
-		destination := AssemblyAST.NewOperand(v.Destination)
-		left := AssemblyAST.NewOperand(v.Left)
-		right := AssemblyAST.NewOperand(v.Right)
+		destination := newOperand(v.Destination)
+		left := newOperand(v.Left)
+		right := newOperand(v.Right)
 
 		if v.Operator == "/" {
 			instructions = append(instructions, AssemblyAST.NewMoveInstruction(left, AssemblyAST.NewRegisterOperand(AssemblyAST.RAX)))
@@ -64,8 +77,8 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 	case *IR.Label:
 		instructions = append(instructions, AssemblyAST.NewLabelInstruction(v.Identifier))
 	case *IR.Copy:
-		left := AssemblyAST.NewOperand(v.Source)
-		right := AssemblyAST.NewOperand(v.Destination)
+		left := newOperand(v.Source)
+		right := newOperand(v.Destination)
 		instructions = append(instructions, AssemblyAST.NewMoveInstruction(left, right))
 	case *IR.ConditionalJump:
 		code := AssemblyAST.EQUALS
@@ -75,7 +88,7 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 			code = AssemblyAST.NOT_EQUALS
 		}
 
-		condition := AssemblyAST.NewOperand(v.Condition)
+		condition := newOperand(v.Condition)
 		instructions = append(instructions, AssemblyAST.NewCompareInstruction(condition, zeroOperand))
 		instructions = append(instructions, AssemblyAST.NewConditionalJumpInstruction(v.TargetLabel, code))
 	default:
