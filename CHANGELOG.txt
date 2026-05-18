@@ -1,5 +1,10 @@
 CHANGELOG.txt
 
+----------- Version: 0.0.7 -----------
+- Type System, Typechecking
+- Major deviation from the book
+- SymbolTable
+
 ----------- Version: 0.0.6 -----------
 - Working on logical expressions
 - &, |, <<, >>, &&, || all work now
