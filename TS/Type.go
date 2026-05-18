@@ -849,7 +849,7 @@ func GetPromotedType(op Token.Token, leftType Type, rightType Type) Type {
 
 	bitwiseOperators := []string{"&", "|", "<<", ">>", "^"}
 	for _, operator := range bitwiseOperators {
-		typeMap[BinaryQuery{operator, INTEGER, INTEGER}] = typeBool
+		typeMap[BinaryQuery{operator, INTEGER, INTEGER}] = typeS32
 	}
 
 	leftTypeKind := getTypeKind(leftType)

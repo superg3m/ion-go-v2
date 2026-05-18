@@ -1,3 +1,4 @@
+// EXPECT: 3
 int main() {
     int first_variable = 1;
     int second_variable = 2;

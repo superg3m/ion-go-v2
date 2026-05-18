@@ -1,7 +1,4 @@
-#ifdef SUPPRESS_WARNINGS
-#pragma GCC diagnostic ignored "-Wparentheses"
-#endif
-
+// EXPECT: 9
 int main() {
     int a = 3;
     int b = 5;

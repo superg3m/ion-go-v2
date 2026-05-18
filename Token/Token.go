@@ -33,10 +33,14 @@ const (
 	BITWISE_RS    = "BITWISE_RS"    // ">>"
 	BITWISE_XOR   = "BITWISE_XOR"   // "^"
 
-	PLUS_EQUALS   = "PLUS_EQUALS"   // "+="
-	MINUS_EQUALS  = "MINUS_EQUALS"  // "-="
-	STAR_EQUALS   = "STAR_EQUALS"   // "*="
-	DIVIDE_EQUALS = "DIVIDE_EQUALS" // "/="
+	PLUS_EQUALS        = "PLUS_EQUALS"        // "+="
+	MINUS_EQUALS       = "MINUS_EQUALS"       // "-="
+	STAR_EQUALS        = "STAR_EQUALS"        // "*="
+	DIVIDE_EQUALS      = "DIVIDE_EQUALS"      // "/="
+	BITWISE_AND_EQUALS = "BITWISE_AND_EQUALS" // "&="
+	BITWISE_OR_EQUALS  = "BITWISE_OR_EQUALS"  // "|="
+	BITWISE_LS_EQUALS  = "DIVIDE_EQUALS"      // "<<="
+	BITWISE_RS_EQUALS  = "DIVIDE_EQUALS"      // ">>="
 
 	// SYNTAX MULTIPLE CHARACTERS
 	EQUALS_EQUALS       = "EQUALS_EQUALS"       // "=="
@@ -110,6 +114,14 @@ func BinaryOperationFromCompoundAssignment(compound string) string {
 		return "*"
 	case "/=":
 		return "/"
+	case "&=":
+		return "&"
+	case "|=":
+		return "|"
+	case "<<=":
+		return "<<"
+	case ">>=":
+		return ">>"
 	}
 
 	panic("BinaryOperationFromCompoundAssignment: invalid compound")
@@ -154,42 +166,46 @@ func GetBuiltinToken(input string) (TokenType, bool) {
 
 func GetSyntaxToken(input string) (TokenType, bool) {
 	var m = map[string]TokenType{
-		"=":  EQUALS,
-		"%":  MODULUS,
-		"+":  PLUS,
-		"-":  MINUS,
-		"/":  DIVISION,
-		"*":  STAR,
-		"<":  LESS_THAN,
-		">":  GREATER_THAN,
-		"!":  NOT,
-		"(":  LEFT_PAREN,
-		")":  RIGHT_PAREN,
-		",":  COMMA,
-		":":  COLON,
-		".":  DOT,
-		";":  SEMI_COLON,
-		"[":  LEFT_BRACKET,
-		"]":  RIGHT_BRACKET,
-		"{":  LEFT_CURLY,
-		"}":  RIGHT_CURLY,
-		"~":  BITWISE_NOT,
-		"&":  BITWISE_AND,
-		"|":  BITWISE_OR,
-		"<<": BITWISE_LS,
-		">>": BITWISE_RS,
-		"^":  BITWISE_XOR,
-		"==": EQUALS_EQUALS,
-		"!=": NOT_EQUALS,
-		">=": GREATER_THAN_EQUALS,
-		"<=": LESS_THAN_EQUALS,
-		"&&": LOGICAL_AND,
-		"||": LOGICAL_OR,
-		"->": RIGHT_ARROW,
-		"+=": PLUS_EQUALS,
-		"-=": MINUS_EQUALS,
-		"*=": STAR_EQUALS,
-		"/=": DIVIDE_EQUALS,
+		"=":   EQUALS,
+		"%":   MODULUS,
+		"+":   PLUS,
+		"-":   MINUS,
+		"/":   DIVISION,
+		"*":   STAR,
+		"<":   LESS_THAN,
+		">":   GREATER_THAN,
+		"!":   NOT,
+		"(":   LEFT_PAREN,
+		")":   RIGHT_PAREN,
+		",":   COMMA,
+		":":   COLON,
+		".":   DOT,
+		";":   SEMI_COLON,
+		"[":   LEFT_BRACKET,
+		"]":   RIGHT_BRACKET,
+		"{":   LEFT_CURLY,
+		"}":   RIGHT_CURLY,
+		"~":   BITWISE_NOT,
+		"&":   BITWISE_AND,
+		"|":   BITWISE_OR,
+		"<<":  BITWISE_LS,
+		">>":  BITWISE_RS,
+		"^":   BITWISE_XOR,
+		"==":  EQUALS_EQUALS,
+		"!=":  NOT_EQUALS,
+		">=":  GREATER_THAN_EQUALS,
+		"<=":  LESS_THAN_EQUALS,
+		"&&":  LOGICAL_AND,
+		"||":  LOGICAL_OR,
+		"->":  RIGHT_ARROW,
+		"+=":  PLUS_EQUALS,
+		"-=":  MINUS_EQUALS,
+		"*=":  STAR_EQUALS,
+		"/=":  DIVIDE_EQUALS,
+		"&=":  BITWISE_AND_EQUALS,
+		"|=":  BITWISE_OR_EQUALS,
+		"<<=": BITWISE_LS_EQUALS,
+		">>=": BITWISE_RS_EQUALS,
 	}
 
 	token, ok := m[input]

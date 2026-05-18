@@ -1,3 +1,4 @@
+// EXPECT: 1
 int main() {
     int a = -2593;
     a = a % 3;

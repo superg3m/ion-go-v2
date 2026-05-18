@@ -1,3 +1,4 @@
+// EXPECT: 1
 int main() {
     int a = 2147483646;
     int b = 0;

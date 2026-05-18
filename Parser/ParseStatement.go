@@ -38,7 +38,7 @@ func (parser *Parser) parseStatementBlock() AST.Statement {
 
 func (parser *Parser) parseAssignmentStatement() AST.Statement {
 	tok := parser.peekNthToken(0)
-	lhs := parser.parseExpression()
+	lhs := parser.parseLValue()
 	parser.expect(Token.EQUALS)
 	rhs := parser.parseExpression()
 	parser.expect(Token.SEMI_COLON)
@@ -88,6 +88,6 @@ func (parser *Parser) parseStatement() AST.Statement {
 		return parser.parseCompoundAssignmentStatement(next.Kind)
 	}
 
-	panic("INVALID STATEMENT!")
+	parser.reportError("INVALID STATEMENT")
 	return nil
 }

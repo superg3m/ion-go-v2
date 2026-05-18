@@ -328,7 +328,7 @@ func typeCheckDeclaration(decl AST.Declaration, env *TypeEnv) {
 		*/
 
 		env.set(v.Tok, v)
-		if v.DeclType != nil {
+		if v.DeclType != nil && rhsType != nil {
 			if implicitlyCastable, err := TS.CanImplicitCast(v.DeclType, rhsType); !implicitlyCastable {
 				panic(fmt.Sprintf("Line: %d | Can't assign type %s to type %s | %s", v.Tok.Line, rhsType.String(), v.DeclType.String(), err.Error()))
 			}

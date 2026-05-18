@@ -68,8 +68,11 @@ func emitFromStatement(stmt AST.Statement, instructions []Instruction) []Instruc
 func emitFromDeclaration(decl AST.Declaration, instructions []Instruction) []Instruction {
 	switch v := decl.(type) {
 	case *AST.DeclarationVariable:
-		var value Value
-		instructions, value = emitFromExpression(v.RHS, instructions)
+		value := NewConstantValue(0, v.Tok)
+		if v.RHS != nil {
+			instructions, value = emitFromExpression(v.RHS, instructions)
+		}
+
 		destination := NewVariable(v.Tok, v.DeclType)
 		instructions = append(instructions, NewCopyInstruction(value, destination))
 	case *AST.DeclarationFunction:
