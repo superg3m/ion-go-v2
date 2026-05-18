@@ -56,11 +56,19 @@ func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 	case *AssemblyAST.InstructionDivide:
 		instructions = []string{fmt.Sprintf("\tidiv %s", v.Left.ToString())}
 	case *AssemblyAST.InstructionCompare:
-		instructions = []string{fmt.Sprintf("\tcmpl %s, %s", v.C1.ToString(), v.C2.ToString())}
+		instructions = []string{fmt.Sprintf("\tcmpl %s, %s", v.Right.ToString(), v.Left.ToString())}
 	case *AssemblyAST.InstructionJump:
 		instructions = []string{fmt.Sprintf("\tjmp .L%s", v.TargetLabel)}
 	case *AssemblyAST.InstructionConditionalJump:
 		instructions = []string{fmt.Sprintf("\tj%s .L%s", v.Code.ToString(), v.TargetLabel)}
+	case *AssemblyAST.InstructionSetConditionalCode:
+		switch t := v.Destination.(type) {
+		case *AssemblyAST.Stack:
+			instructions = []string{fmt.Sprintf("\tset%s %s", v.Code.ToString(), v.Destination.ToString())}
+		case *AssemblyAST.Register:
+			instructions = []string{fmt.Sprintf("\tset%s %s", v.Code.ToString(), t.X8BitName())}
+		}
+		instructions = []string{fmt.Sprintf("\tset%s %s", v.Code.ToString(), v.Destination.ToString())}
 	case *AssemblyAST.InstructionLabel:
 		instructions = []string{fmt.Sprintf(".L%s:", v.Identifier)}
 	default:

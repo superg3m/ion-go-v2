@@ -64,16 +64,16 @@ func buildExecutable(asmPath string, exePath string) error {
 	return nil
 }
 
-func runExecutable(path string) (int, string, error) {
+func runExecutable(path string) (int32, string, error) {
 	cmd := exec.Command(path)
 
 	out, err := cmd.CombinedOutput()
 
-	exitCode := 0
+	exitCode := int32(0)
 
 	if err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			exitCode = exitErr.ExitCode()
+			exitCode = int32(exitErr.ExitCode())
 		} else {
 			return 0, "", err
 		}
@@ -82,7 +82,7 @@ func runExecutable(path string) (int, string, error) {
 	return exitCode, string(out), nil
 }
 
-func parseExpected(path string) int {
+func parseExpected(path string) int32 {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
@@ -103,7 +103,7 @@ func parseExpected(path string) int {
 				panic(err)
 			}
 
-			return n
+			return int32(n)
 		}
 	}
 
@@ -116,17 +116,10 @@ func runTest(path string) bool {
 	fmt.Println("====================================")
 	fmt.Println("Running:", name)
 
-	err := os.MkdirAll("./output", os.ModePerm)
-	if err != nil {
-		fmt.Println("FAILED TO CREATE OUTPUT DIRECTORY")
-		fmt.Println(err)
-		return false
-	}
+	asmPath := "./Test/test.s"
+	exePath := "./Test/test.exe"
 
-	asmPath := "./output/test.s"
-	exePath := "./output/test.exe"
-
-	err = compileFile(path, asmPath)
+	err := compileFile(path, asmPath)
 	if err != nil {
 		fmt.Println("COMPILER ERROR")
 		fmt.Println(err)

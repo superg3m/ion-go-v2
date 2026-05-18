@@ -32,8 +32,8 @@ type InstructionDivide struct {
 }
 
 type InstructionCompare struct {
-	C1 Operand
-	C2 Operand
+	Left  Operand
+	Right Operand
 }
 type InstructionJump struct {
 	TargetLabel string
@@ -100,10 +100,10 @@ func NewStackAllocateInstruction(allocationSize int) Instruction {
 	}
 }
 
-func NewCompareInstruction(c1, c2 Operand) Instruction {
+func NewCompareInstruction(left, right Operand) Instruction {
 	return &InstructionCompare{
-		C1: c1,
-		C2: c2,
+		Left:  left,
+		Right: right,
 	}
 }
 
