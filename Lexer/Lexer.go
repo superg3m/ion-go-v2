@@ -113,10 +113,12 @@ func (lexer *Lexer) consumeSyntax() bool {
 	switch lexer.c {
 	case '&':
 		if lexer.consumeOnMatch('&') {
+		} else if lexer.consumeOnMatch('=') {
 		}
 
 	case '|':
 		if lexer.consumeOnMatch('|') {
+		} else if lexer.consumeOnMatch('=') {
 		}
 
 	case '[':
@@ -170,7 +172,7 @@ func (lexer *Lexer) consumeSyntax() bool {
 			return true
 		}
 
-	case '!', '*', '=':
+	case '!', '*', '=', '^':
 		lexer.consumeOnMatch('=')
 	}
 

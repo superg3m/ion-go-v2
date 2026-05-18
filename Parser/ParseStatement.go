@@ -84,7 +84,7 @@ func (parser *Parser) parseStatement() AST.Statement {
 		return parser.parseStatementReturn()
 	} else if current.Kind == Token.IDENTIFIER && next.Kind == Token.EQUALS {
 		return parser.parseAssignmentStatement()
-	} else if current.Kind == Token.IDENTIFIER && Token.IsCompoundAssignment(next.Kind) {
+	} else if current.Kind == Token.IDENTIFIER && Token.BinaryOperationFromCompoundAssignment(next.Lexeme) != "" {
 		return parser.parseCompoundAssignmentStatement(next.Kind)
 	}
 

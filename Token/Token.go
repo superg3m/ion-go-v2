@@ -1,5 +1,7 @@
 package Token
 
+import "fmt"
+
 type TokenType string
 
 const (
@@ -39,6 +41,7 @@ const (
 	DIVIDE_EQUALS      = "DIVIDE_EQUALS"      // "/="
 	BITWISE_AND_EQUALS = "BITWISE_AND_EQUALS" // "&="
 	BITWISE_OR_EQUALS  = "BITWISE_OR_EQUALS"  // "|="
+	BITWISE_XOR_EQUALS = "BITWISE_OR_EQUALS"  // "^="
 	BITWISE_LS_EQUALS  = "DIVIDE_EQUALS"      // "<<="
 	BITWISE_RS_EQUALS  = "DIVIDE_EQUALS"      // ">>="
 
@@ -89,21 +92,6 @@ func CreateToken(kind TokenType, lexeme string, line int) Token {
 	return Token{kind, lexeme, line}
 }
 
-func IsCompoundAssignment(tokenType TokenType) bool {
-	switch tokenType {
-	case PLUS_EQUALS:
-		return true
-	case MINUS_EQUALS:
-		return true
-	case STAR_EQUALS:
-		return true
-	case DIVIDE_EQUALS:
-		return true
-	}
-
-	return false
-}
-
 func BinaryOperationFromCompoundAssignment(compound string) string {
 	switch compound {
 	case "+=":
@@ -122,9 +110,11 @@ func BinaryOperationFromCompoundAssignment(compound string) string {
 		return "<<"
 	case ">>=":
 		return ">>"
+	case "^=":
+		return "^"
 	}
 
-	panic("BinaryOperationFromCompoundAssignment: invalid compound")
+	panic(fmt.Sprintf("BinaryOperationFromCompoundAssignment: invalid compound | %s", compound))
 	return ""
 }
 
@@ -204,6 +194,7 @@ func GetSyntaxToken(input string) (TokenType, bool) {
 		"/=":  DIVIDE_EQUALS,
 		"&=":  BITWISE_AND_EQUALS,
 		"|=":  BITWISE_OR_EQUALS,
+		"^=":  BITWISE_XOR_EQUALS,
 		"<<=": BITWISE_LS_EQUALS,
 		">>=": BITWISE_RS_EQUALS,
 	}
