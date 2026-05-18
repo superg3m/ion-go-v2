@@ -299,6 +299,13 @@ func typeCheckStatement(s AST.Statement, env *TypeEnv) {
 		for _, node := range v.Body {
 			typeCheckNode(node, env)
 		}
+	case *AST.StatementCompoundAssignment:
+		lhsType := typeCheckExpression(v.LHS, env)
+		rhsType := typeCheckExpression(v.RHS, env)
+
+		if looselyComparable, err := TS.TypeLooseCompare(lhsType, rhsType); !looselyComparable {
+			panic(fmt.Sprintf("Line %d | Can't assign type %s to type %s | %s", v.LHSIdentifierToken.Line, rhsType.String(), lhsType.String(), err.Error()))
+		}
 
 	//case *AST.SE_FunctionCall:
 	//typeCheckFunctionCall(v, env)

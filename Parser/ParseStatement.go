@@ -58,26 +58,19 @@ func (parser *Parser) parseAssignmentStatement() AST.Statement {
 	}
 }
 
-func (parser *Parser) parseCompoundAssignmentStatement() AST.Statement {
+func (parser *Parser) parseCompoundAssignmentStatement(compoundAssignmentToken Token.TokenType) AST.Statement {
 	tok := parser.peekNthToken(0)
 
 	lhs := parser.parseExpression()
-	parser.expect(Token.EQUALS)
+	operator := parser.expect(compoundAssignmentToken)
 	rhs := parser.parseExpression()
 	parser.expect(Token.SEMI_COLON)
-	/*
-		if !parser.ctx.ParsingForIncrement {
-			parser.expect(Token.SEMI_COLON)
-		}
-	*/
 
-	return &AST.StatementExpression{
-		Tok: tok,
-		Expr: &AST.ExpressionAssignment{
-			LHSIdentifierToken: tok,
-			LHS:                lhs,
-			RHS:                rhs,
-		},
+	return &AST.StatementCompoundAssignment{
+		Operator:           operator,
+		LHSIdentifierToken: tok,
+		LHS:                lhs,
+		RHS:                rhs,
 	}
 }
 
@@ -91,8 +84,8 @@ func (parser *Parser) parseStatement() AST.Statement {
 		return parser.parseStatementReturn()
 	} else if current.Kind == Token.IDENTIFIER && next.Kind == Token.EQUALS {
 		return parser.parseAssignmentStatement()
-	} else if current.Kind == Token.SEMI_COLON {
-
+	} else if current.Kind == Token.IDENTIFIER && Token.IsCompoundAssignment(next.Kind) {
+		return parser.parseCompoundAssignmentStatement(next.Kind)
 	}
 
 	panic("INVALID STATEMENT!")

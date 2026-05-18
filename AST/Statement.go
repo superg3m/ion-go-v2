@@ -17,9 +17,10 @@ type StatementReturn struct {
 }
 
 type StatementCompoundAssignment struct {
-	Operator Token.Token // operator
-	LHS      Expression
-	RHS      Expression
+	LHSIdentifierToken Token.Token
+	Operator           Token.Token
+	LHS                Expression
+	RHS                Expression
 }
 
 type StatementExpression struct {

@@ -52,6 +52,12 @@ func emitFromStatement(stmt AST.Statement, instructions []Instruction) []Instruc
 		instructions = append(instructions, NewReturnInstruction(value))
 	case *AST.StatementExpression:
 		instructions, _ = emitFromExpression(v.Expr, instructions)
+	case *AST.StatementCompoundAssignment:
+		var left, right Value
+		instructions, left = emitFromExpression(v.LHS, instructions)
+		instructions, right = emitFromExpression(v.RHS, instructions)
+		destination := NewVariable(v.LHSIdentifierToken, left.GetDeclType())
+		instructions = append(instructions, NewBinaryInstruction(Token.BinaryOperationFromCompoundAssignment(v.Operator.Lexeme), left, right, destination))
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}

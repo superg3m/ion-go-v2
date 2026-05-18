@@ -85,7 +85,36 @@ func CreateToken(kind TokenType, lexeme string, line int) Token {
 	return Token{kind, lexeme, line}
 }
 
-// IsCompoundAssignment
+func IsCompoundAssignment(tokenType TokenType) bool {
+	switch tokenType {
+	case PLUS_EQUALS:
+		return true
+	case MINUS_EQUALS:
+		return true
+	case STAR_EQUALS:
+		return true
+	case DIVIDE_EQUALS:
+		return true
+	}
+
+	return false
+}
+
+func BinaryOperationFromCompoundAssignment(compound string) string {
+	switch compound {
+	case "+=":
+		return "+"
+	case "-=":
+		return "-"
+	case "*=":
+		return "*"
+	case "/=":
+		return "/"
+	}
+
+	panic("BinaryOperationFromCompoundAssignment: invalid compound")
+	return ""
+}
 
 func GetKeywordToken(input string) (TokenType, bool) {
 	var m = map[string]TokenType{
