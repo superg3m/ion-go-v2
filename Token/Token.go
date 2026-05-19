@@ -67,6 +67,7 @@ const (
 	CAST     = "CAST"
 	VAR      = "VAR"
 	IF       = "IF"
+	ELSE_IF  = "ELSE_IF"
 	ELSE     = "ELSE"
 	FOR      = "FOR"
 	WHILE    = "WHILE"

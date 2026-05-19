@@ -294,8 +294,9 @@ func typeCheckStatement(s AST.Statement, env *TypeEnv) {
 			typeCheckStatement(v.ElseBlock, env)
 		}
 	case *AST.StatementBlock:
+		blockEnv := NewTypeEnv(env)
 		for _, node := range v.Body {
-			typeCheckNode(node, env)
+			typeCheckNode(node, blockEnv)
 		}
 	case *AST.StatementCompoundAssignment:
 		lhsType := typeCheckExpression(v.LHS, env)
