@@ -52,6 +52,27 @@ func emitFromStatement(stmt AST.Statement, instructions []Instruction) []Instruc
 		instructions = append(instructions, NewReturnInstruction(value))
 	case *AST.StatementExpression:
 		instructions, _ = emitFromExpression(v.Expr, instructions)
+	case *AST.StatementIfElse:
+		elseLabel := uniqueLabelName()
+		endLabel := uniqueLabelName()
+
+		var condition Value
+		instructions, condition = emitFromExpression(v.Condition, instructions)
+		instructions = append(instructions, NewConditionalJumpInstruction(elseLabel, condition, true, false))
+
+		instructions = emitFromStatement(v.ThenBlock, instructions)
+		instructions = append(instructions, NewJumpInstruction(elseLabel))
+
+		instructions = append(instructions, NewLabelInstruction(elseLabel))
+		if v.ElseBlock != nil {
+			instructions = emitFromStatement(v.ElseBlock, instructions)
+		}
+
+		instructions = append(instructions, NewLabelInstruction(endLabel))
+	case *AST.StatementBlock:
+		for _, node := range v.Body {
+			instructions = append(instructions, emitFromNode(node)...)
+		}
 	case *AST.StatementCompoundAssignment:
 		var left, right Value
 		instructions, left = emitFromExpression(v.LHS, instructions)
@@ -192,9 +213,7 @@ func emitDefinitionFromDeclaration(decl AST.Declaration) Definition {
 			Instructions: instructions,
 		}
 	case *AST.DeclarationFunction:
-		for _, node := range v.Block.Body {
-			instructions = append(instructions, emitFromNode(node)...)
-		}
+		instructions = append(instructions, emitFromStatement(v.Block, instructions)...)
 
 		return &FunctionDefinition{
 			DeclType:     v.DeclType,

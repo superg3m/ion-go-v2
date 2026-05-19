@@ -28,6 +28,12 @@ type StatementExpression struct {
 	Expr Expression
 }
 
+type StatementIfElse struct {
+	Condition Expression
+	ThenBlock *StatementBlock
+	ElseBlock *StatementBlock
+}
+
 type StatementNull struct {
 	Expr Expression
 }
@@ -46,3 +52,6 @@ func (*StatementExpression) isStatement() {}
 
 func (*StatementNull) isNode()      {}
 func (*StatementNull) isStatement() {}
+
+func (s StatementIfElse) isNode()      {}
+func (s StatementIfElse) isStatement() {}

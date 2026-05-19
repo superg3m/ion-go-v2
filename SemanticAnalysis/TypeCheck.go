@@ -279,22 +279,20 @@ func typeCheckStatement(s AST.Statement, env *TypeEnv) {
 			env.CurrentStatus = IN_LOOP
 			typeCheckStatement(v.Block, env)
 			env.CurrentStatus = NORMAL
-
-		case *AST.StatementIfElse:
-			condition := typeCheckExpression(v.Condition, env)
-			if _, ok := condition.(*TS.BoolType); !ok {
-				panic("For statement condition doesn't resolve to a bool it resolves to: " + condition.String())
-			}
-
-			typeCheckStatement(v.IfBlock, env)
-
-			if v.ElseBlock != nil {
-				typeCheckStatement(v.ElseBlock, env)
-			}
-
 		case *AST.StatementDefer:
 			typeCheckNode(v.DeferredNode.(AST.Node), env)
 	*/
+	case *AST.StatementIfElse:
+		condition := typeCheckExpression(v.Condition, env)
+		if _, ok := condition.(*TS.BoolType); !ok {
+			panic("For statement condition doesn't resolve to a bool it resolves to: " + condition.String())
+		}
+
+		typeCheckStatement(v.ThenBlock, env)
+
+		if v.ElseBlock != nil {
+			typeCheckStatement(v.ElseBlock, env)
+		}
 	case *AST.StatementBlock:
 		for _, node := range v.Body {
 			typeCheckNode(node, env)

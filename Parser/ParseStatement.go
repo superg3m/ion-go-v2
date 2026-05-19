@@ -74,6 +74,25 @@ func (parser *Parser) parseCompoundAssignmentStatement(compoundAssignmentToken T
 	}
 }
 
+func (parser *Parser) parseIfElseStatement() AST.Statement {
+	parser.expect(Token.IF)
+	parser.expect(Token.LEFT_PAREN)
+	condition := parser.parseExpression()
+	parser.expect(Token.RIGHT_PAREN)
+	ifBlock := parser.parseStatementBlock()
+
+	var elseBlock *AST.StatementBlock = nil
+	if parser.consumeOnMatch(Token.ELSE) {
+		elseBlock = parser.parseStatementBlock().(*AST.StatementBlock)
+	}
+
+	return &AST.StatementIfElse{
+		Condition: condition,
+		ThenBlock: ifBlock.(*AST.StatementBlock),
+		ElseBlock: elseBlock,
+	}
+}
+
 func (parser *Parser) parseStatement() AST.Statement {
 	current := parser.peekNthToken(0)
 	next := parser.peekNthToken(1)
@@ -82,6 +101,8 @@ func (parser *Parser) parseStatement() AST.Statement {
 		return parser.parseStatementBlock()
 	} else if current.Kind == Token.RETURN {
 		return parser.parseStatementReturn()
+	} else if current.Kind == Token.IF {
+		return parser.parseIfElseStatement()
 	} else if current.Kind == Token.IDENTIFIER && next.Kind == Token.EQUALS {
 		return parser.parseAssignmentStatement()
 	} else if current.Kind == Token.IDENTIFIER && Token.BinaryOperationFromCompoundAssignment(next.Lexeme) != "" {
