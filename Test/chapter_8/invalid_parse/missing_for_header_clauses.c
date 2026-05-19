@@ -1,5 +1,0 @@
-int main() {
-    for (2 + 2 == 4)
-        ;
-    return 0;
-}

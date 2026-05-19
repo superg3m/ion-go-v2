@@ -134,9 +134,10 @@ func typeCheckExpression(e AST.Expression, env *TypeEnv) TS.Type {
 		if looselyComparable, err := TS.TypeLooseCompare(lhsType, rhsType); !looselyComparable {
 			panic(fmt.Sprintf("Line %d | Can't assign type %s to type %s | %s", v.LHSIdentifierToken.Line, rhsType.String(), lhsType.String(), err.Error()))
 		}
+
+		return lhsType
 	case *AST.ExpressionUnary:
 		return typeCheckExpression(v.Operand, env)
-
 	case *AST.ExpressionGrouping:
 		return typeCheckExpression(v.Expr, env)
 	case *AST.ExpressionPre:

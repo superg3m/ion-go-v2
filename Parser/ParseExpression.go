@@ -60,6 +60,17 @@ func (parser *Parser) parsePrimary() AST.Expression {
 			LHS:                lhs,
 			RHS:                rhs,
 		}
+	} else if current.Kind == Token.IDENTIFIER && Token.BinaryOperationFromCompoundAssignment(next.Lexeme) != "" {
+		lhs := parser.parseLValue()
+		operator := parser.consumeNextToken()
+		rhs := parser.parseExpression()
+
+		return &AST.ExpressionCompoundAssignment{
+			LHSIdentifierToken: current,
+			Operator:           operator,
+			LHS:                lhs,
+			RHS:                rhs,
+		}
 	} else if current.Kind == Token.IDENTIFIER {
 		return parser.parseLValue()
 	} else if parser.consumeOnMatch(Token.LEFT_PAREN) {

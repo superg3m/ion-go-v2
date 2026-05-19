@@ -52,9 +52,8 @@ func emitFromStatement(stmt AST.Statement, instructions []Instruction) []Instruc
 		}
 
 		instructions = emitFromStatement(v.ThenBlock, instructions)
-		instructions = append(instructions, NewJumpInstruction(endLabel))
-
 		if v.ElseBlock != nil {
+			instructions = append(instructions, NewJumpInstruction(endLabel))
 			instructions = append(instructions, NewLabelInstruction(elseLabel))
 			instructions = emitFromStatement(v.ElseBlock, instructions)
 		}
@@ -69,10 +68,16 @@ func emitFromStatement(stmt AST.Statement, instructions []Instruction) []Instruc
 	case *AST.StatementBreak:
 		instructions = append(instructions, NewJumpInstruction(v.EndLoopLabel))
 	case *AST.StatementFor:
+		skipIncrementLabel := Unique.LabelName()
+
 		instructions = emitFromDeclaration(v.Initializer, instructions)
 
-		var condition Value
+		instructions = append(instructions, NewJumpInstruction(skipIncrementLabel))
 		instructions = append(instructions, NewLabelInstruction(v.StartLoopLabel))
+		instructions = emitFromStatement(v.Increment, instructions)
+
+		var condition Value
+		instructions = append(instructions, NewLabelInstruction(skipIncrementLabel))
 		instructions, condition = emitFromExpression(v.Condition, instructions)
 		instructions = append(instructions, NewConditionalJumpInstruction(v.EndLoopLabel, condition, true, false))
 
@@ -80,7 +85,6 @@ func emitFromStatement(stmt AST.Statement, instructions []Instruction) []Instruc
 			instructions = append(instructions, emitFromNode(node)...)
 		}
 
-		instructions = emitFromStatement(v.Increment, instructions)
 		instructions = append(instructions, NewJumpInstruction(v.StartLoopLabel))
 		instructions = append(instructions, NewLabelInstruction(v.EndLoopLabel))
 	case *AST.StatementWhile:

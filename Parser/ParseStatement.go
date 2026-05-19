@@ -59,19 +59,12 @@ func (parser *Parser) parseStatementExpression() AST.Statement {
 
 func (parser *Parser) parseCompoundAssignmentStatement(compoundAssignmentToken Token.TokenType) AST.Statement {
 	tok := parser.peekNthToken(0)
-
-	lhs := parser.parseExpression()
-	operator := parser.expect(compoundAssignmentToken)
-	rhs := parser.parseExpression()
+	expr := parser.parseExpression()
 	parser.expect(Token.SEMI_COLON)
 
 	return &AST.StatementExpression{
-		Expr: &AST.ExpressionCompoundAssignment{
-			Operator:           operator,
-			LHSIdentifierToken: tok,
-			LHS:                lhs,
-			RHS:                rhs,
-		},
+		Tok:  tok,
+		Expr: expr,
 	}
 }
 
