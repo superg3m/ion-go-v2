@@ -32,8 +32,8 @@ func (parser *Parser) parseStatementBlock() AST.Statement {
 			}
 		}
 	} else {
-		if decl := parser.parseDeclaration(); decl != nil {
-			body = append(body, decl)
+		if ok := parser.fakeParseDeclaration(); ok {
+			parser.reportError("Unscoped StatementBlock May not have a declaration!")
 		} else if stmt := parser.parseStatement(); stmt != nil {
 			body = append(body, stmt)
 		}

@@ -2,6 +2,7 @@ CHANGELOG.txt
 
 ----------- Version: 0.0.8 -----------
 - If else statements and worked on typechecking
+- for, while, break, continue
 
 
 ----------- Version: 0.0.7 -----------

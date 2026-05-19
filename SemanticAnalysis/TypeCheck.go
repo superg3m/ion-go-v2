@@ -46,6 +46,13 @@ func typeCheckFunctionCall(v *AST.SE_FunctionCall, env *TypeEnv) TS.Type {
 }
 */
 
+func validConditionResolution(condition TS.Type) bool {
+	_, booleanResolution := condition.(*TS.BoolType)
+	_, integerResolution := condition.(*TS.IntegerType)
+
+	return booleanResolution || integerResolution
+}
+
 func typeCheckExpression(e AST.Expression, env *TypeEnv) TS.Type {
 	if e == nil {
 		return nil
@@ -259,9 +266,7 @@ func typeCheckStatement(s AST.Statement, env *TypeEnv) {
 	*/
 	case *AST.StatementIfElse:
 		condition := typeCheckExpression(v.Condition, env)
-		_, booleanResolution := condition.(*TS.BoolType)
-		_, integerResolution := condition.(*TS.IntegerType)
-		if !booleanResolution && !integerResolution {
+		if !validConditionResolution(condition) {
 			panic("For statement condition doesn't resolve to a bool it resolves to: " + condition.String())
 		}
 
@@ -298,7 +303,7 @@ func typeCheckStatement(s AST.Statement, env *TypeEnv) {
 	case *AST.StatementFor:
 		typeCheckDeclaration(v.Initializer, env)
 		condition := typeCheckExpression(v.Condition, env)
-		if _, ok := condition.(*TS.BoolType); !ok {
+		if !validConditionResolution(condition) {
 			panic("For statement condition doesn't resolve to a bool it resolves to: " + condition.String())
 		}
 
@@ -317,7 +322,7 @@ func typeCheckStatement(s AST.Statement, env *TypeEnv) {
 		env.CurrentStatus = NORMAL
 	case *AST.StatementWhile:
 		condition := typeCheckExpression(v.Condition, env)
-		if _, ok := condition.(*TS.BoolType); !ok {
+		if !validConditionResolution(condition) {
 			panic("For statement condition doesn't resolve to a bool it resolves to: " + condition.String())
 		}
 

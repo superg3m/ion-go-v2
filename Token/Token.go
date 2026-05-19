@@ -1,7 +1,5 @@
 package Token
 
-import "fmt"
-
 type TokenType string
 
 const (
@@ -117,7 +115,6 @@ func BinaryOperationFromCompoundAssignment(compound string) string {
 		return "^"
 	}
 
-	panic(fmt.Sprintf("BinaryOperationFromCompoundAssignment: invalid compound | %s", compound))
 	return ""
 }
 
