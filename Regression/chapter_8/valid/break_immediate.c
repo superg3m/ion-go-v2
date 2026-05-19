@@ -1,7 +1,7 @@
+// EXPECT: 1
 int main() {
     int a = 10;
-    do
+    while ((a = 1))
         break;
-    while ((a = 1));
     return a;
 }

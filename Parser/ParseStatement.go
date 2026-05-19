@@ -73,6 +73,10 @@ func (parser *Parser) parseForStatement() AST.Statement {
 	parser.expect(Token.LEFT_PAREN)
 	initializer := parser.parseVariableDeclaration()
 	condition := parser.parseExpression()
+	if initializer == nil || condition == nil {
+		parser.reportError("For Statement but have both a valid initializer variable declaration and condition expression")
+	}
+
 	parser.expect(Token.SEMI_COLON)
 	parser.ctx.ParsingForIncrement = true
 	increment := parser.parseStatementExpression()

@@ -1,3 +1,4 @@
+// EXPECT: 1
 int main() {
     int acc = 0;
     int x = 100;
@@ -9,6 +10,6 @@ int main() {
             y = y - 1;
         }
     }
-    return acc == 100 && x == 0;
 
+    return acc == 100 && x == 0;
 }

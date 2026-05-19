@@ -74,7 +74,9 @@ func emitFromStatement(stmt AST.Statement, instructions []Instruction) []Instruc
 
 		instructions = append(instructions, NewJumpInstruction(skipIncrementLabel))
 		instructions = append(instructions, NewLabelInstruction(v.StartLoopLabel))
-		instructions = emitFromStatement(v.Increment, instructions)
+		if v.Increment.Expr != nil {
+			instructions = emitFromStatement(v.Increment, instructions)
+		}
 
 		var condition Value
 		instructions = append(instructions, NewLabelInstruction(skipIncrementLabel))

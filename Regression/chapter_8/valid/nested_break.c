@@ -1,3 +1,4 @@
+// EXPECT: 250
 int main() {
     int ans = 0;
     for (int i = 0; i < 10; i = i + 1)

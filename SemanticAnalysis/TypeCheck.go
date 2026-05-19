@@ -301,22 +301,25 @@ func typeCheckStatement(s AST.Statement, env *TypeEnv) {
 
 		v.StartLoopLabel = env.StartLoopLabel
 	case *AST.StatementFor:
-		typeCheckDeclaration(v.Initializer, env)
-		condition := typeCheckExpression(v.Condition, env)
-		if !validConditionResolution(condition) {
-			panic("For statement condition doesn't resolve to a bool it resolves to: " + condition.String())
-		}
-
-		typeCheckStatement(v.Increment, env)
-
 		env.CurrentStatus = IN_LOOP
 		env.StartLoopLabel = Unique.LabelName()
 		env.EndLoopLabel = Unique.LabelName()
 		v.StartLoopLabel = env.StartLoopLabel
 		v.EndLoopLabel = env.EndLoopLabel
-		for _, node := range v.Block.Body {
-			typeCheckNode(node, env)
+
+		forTypeEnv := NewTypeEnv(env)
+		typeCheckDeclaration(v.Initializer, forTypeEnv)
+		condition := typeCheckExpression(v.Condition, forTypeEnv)
+		if !validConditionResolution(condition) {
+			panic("For statement condition doesn't resolve to a bool it resolves to: " + condition.String())
 		}
+
+		typeCheckStatement(v.Increment, forTypeEnv)
+
+		for _, node := range v.Block.Body {
+			typeCheckNode(node, forTypeEnv)
+		}
+
 		env.StartLoopLabel = ""
 		env.EndLoopLabel = ""
 		env.CurrentStatus = NORMAL

@@ -1,3 +1,4 @@
+// EXPECT: 1
 int main() {
     int a = 10;
     for (int b = -20; b < 0; b = b + 1) {
@@ -6,5 +7,5 @@ int main() {
             break;
     }
 
-    return a == 0 && b == -11;
+    return a == 0;
 }

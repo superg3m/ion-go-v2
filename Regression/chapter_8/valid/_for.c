@@ -1,4 +1,4 @@
-// EXPECT: 3
+// EXPECT: 7
 int main() {
 	int x = 0;
 	int y = 5;

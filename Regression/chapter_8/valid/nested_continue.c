@@ -1,3 +1,4 @@
+// EXPECT: 24
 int main() {
     int x = 5;
     int acc = 0;
