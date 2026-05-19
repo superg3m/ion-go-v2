@@ -131,6 +131,7 @@ func runTest(path string) bool {
 	if err != nil {
 		fmt.Println("GCC ERROR")
 		fmt.Println(err)
+		panic("gcc")
 		return false
 	}
 

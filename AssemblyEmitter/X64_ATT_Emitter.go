@@ -53,9 +53,9 @@ func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 		case "|":
 			instructions = []string{fmt.Sprintf("\torl %s, %s", v.Right.ToString(), v.Left.ToString())}
 		case "<<":
-			instructions = []string{fmt.Sprintf("\tsal %s, %s", v.Right.ToString(), v.Left.ToString())}
+			instructions = []string{fmt.Sprintf("\tsall %s, %s", v.Right.ToString(), v.Left.ToString())}
 		case ">>":
-			instructions = []string{fmt.Sprintf("\tsar %s, %s", v.Right.ToString(), v.Left.ToString())}
+			instructions = []string{fmt.Sprintf("\tsarl %s, %s", v.Right.ToString(), v.Left.ToString())}
 		case "^":
 			instructions = []string{fmt.Sprintf("\txorl %s, %s", v.Right.ToString(), v.Left.ToString())}
 		default:
