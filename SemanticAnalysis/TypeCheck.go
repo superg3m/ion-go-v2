@@ -127,6 +127,13 @@ func typeCheckExpression(e AST.Expression, env *TypeEnv) TS.Type {
 		}
 
 		return lhsType
+	case *AST.ExpressionCompoundAssignment:
+		lhsType := typeCheckExpression(v.LHS, env)
+		rhsType := typeCheckExpression(v.RHS, env)
+
+		if looselyComparable, err := TS.TypeLooseCompare(lhsType, rhsType); !looselyComparable {
+			panic(fmt.Sprintf("Line %d | Can't assign type %s to type %s | %s", v.LHSIdentifierToken.Line, rhsType.String(), lhsType.String(), err.Error()))
+		}
 	case *AST.ExpressionUnary:
 		return typeCheckExpression(v.Operand, env)
 
@@ -280,14 +287,6 @@ func typeCheckStatement(s AST.Statement, env *TypeEnv) {
 		for _, node := range v.Body {
 			typeCheckNode(node, blockEnv)
 		}
-	case *AST.StatementCompoundAssignment:
-		lhsType := typeCheckExpression(v.LHS, env)
-		rhsType := typeCheckExpression(v.RHS, env)
-
-		if looselyComparable, err := TS.TypeLooseCompare(lhsType, rhsType); !looselyComparable {
-			panic(fmt.Sprintf("Line %d | Can't assign type %s to type %s | %s", v.LHSIdentifierToken.Line, rhsType.String(), lhsType.String(), err.Error()))
-		}
-
 	case *AST.StatementBreak:
 		if env.CurrentStatus != IN_LOOP {
 			panic("break statement is not in loop")

@@ -16,13 +16,6 @@ type StatementReturn struct {
 	Expr Expression
 }
 
-type StatementCompoundAssignment struct {
-	LHSIdentifierToken Token.Token
-	Operator           Token.Token
-	LHS                Expression
-	RHS                Expression
-}
-
 type StatementExpression struct {
 	Tok  Token.Token
 	Expr Expression
@@ -69,9 +62,6 @@ func (*StatementBlock) isStatement() {}
 
 func (*StatementReturn) isNode()      {}
 func (*StatementReturn) isStatement() {}
-
-func (*StatementCompoundAssignment) isNode()      {}
-func (*StatementCompoundAssignment) isStatement() {}
 
 func (*StatementExpression) isNode()      {}
 func (*StatementExpression) isStatement() {}

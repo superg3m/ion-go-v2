@@ -95,12 +95,6 @@ func emitFromStatement(stmt AST.Statement, instructions []Instruction) []Instruc
 
 		instructions = append(instructions, NewJumpInstruction(v.StartLoopLabel))
 		instructions = append(instructions, NewLabelInstruction(v.EndLoopLabel))
-	case *AST.StatementCompoundAssignment:
-		var left, right Value
-		instructions, left = emitFromExpression(v.LHS, instructions)
-		instructions, right = emitFromExpression(v.RHS, instructions)
-		destination := NewVariable(v.LHSIdentifierToken, left.GetDeclType())
-		instructions = append(instructions, NewBinaryInstruction(Token.BinaryOperationFromCompoundAssignment(v.Operator.Lexeme), left, right, destination))
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}
@@ -148,6 +142,14 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 		instructions, source = emitFromExpression(v.RHS, instructions)
 		destination := NewVariable(v.LHSIdentifierToken, source.GetDeclType())
 		instructions = append(instructions, NewCopyInstruction(source, destination))
+		return instructions, destination
+	case *AST.ExpressionCompoundAssignment:
+		var left, right Value
+		instructions, left = emitFromExpression(v.LHS, instructions)
+		instructions, right = emitFromExpression(v.RHS, instructions)
+		destination := NewVariable(v.LHSIdentifierToken, left.GetDeclType())
+		instructions = append(instructions, NewBinaryInstruction(Token.BinaryOperationFromCompoundAssignment(v.Operator.Lexeme), left, right, destination))
+
 		return instructions, destination
 	case *AST.ExpressionBinary:
 		var left, right Value

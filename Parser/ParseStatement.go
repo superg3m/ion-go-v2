@@ -65,11 +65,13 @@ func (parser *Parser) parseCompoundAssignmentStatement(compoundAssignmentToken T
 	rhs := parser.parseExpression()
 	parser.expect(Token.SEMI_COLON)
 
-	return &AST.StatementCompoundAssignment{
-		Operator:           operator,
-		LHSIdentifierToken: tok,
-		LHS:                lhs,
-		RHS:                rhs,
+	return &AST.StatementExpression{
+		Expr: &AST.ExpressionCompoundAssignment{
+			Operator:           operator,
+			LHSIdentifierToken: tok,
+			LHS:                lhs,
+			RHS:                rhs,
+		},
 	}
 }
 
