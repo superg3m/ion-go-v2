@@ -14,16 +14,29 @@ const (
 )
 
 type TypeEnv struct {
-	parent        *TypeEnv
-	variables     map[string]*AST.DeclarationVariable
-	CurrentStatus Status
+	parent         *TypeEnv
+	variables      map[string]*AST.DeclarationVariable
+	CurrentStatus  Status
+	StartLoopLabel string
+	EndLoopLabel   string
 }
 
 func NewTypeEnv(parent *TypeEnv) *TypeEnv {
+	status := NORMAL
+	startLoopLabel := ""
+	endLoopLabel := ""
+	if parent != nil {
+		status = parent.CurrentStatus
+		startLoopLabel = parent.StartLoopLabel
+		endLoopLabel = parent.EndLoopLabel
+	}
+
 	return &TypeEnv{
-		parent:        parent,
-		variables:     make(map[string]*AST.DeclarationVariable),
-		CurrentStatus: NORMAL,
+		parent:         parent,
+		variables:      make(map[string]*AST.DeclarationVariable),
+		CurrentStatus:  status,
+		StartLoopLabel: startLoopLabel,
+		EndLoopLabel:   endLoopLabel,
 	}
 }
 

@@ -34,6 +34,22 @@ func (parser *Parser) parsePrimary() AST.Expression {
 		return &AST.ExpressionFloat{Value: float32(num)}
 	} else if parser.consumeOnMatch(Token.STRING_LITERAL) {
 		return &AST.ExpressionString{Value: current.Lexeme[1 : len(current.Lexeme)-1]}
+	} else if current.Kind == Token.IDENTIFIER && (next.Kind == Token.INCREMENT || next.Kind == Token.DECREMENT) {
+		operand := parser.parseLValue()
+		operator := parser.consumeNextToken()
+
+		return &AST.ExpressionPost{
+			Operator: operator,
+			Operand:  operand,
+		}
+	} else if (current.Kind == Token.INCREMENT || current.Kind == Token.DECREMENT) && next.Kind == Token.IDENTIFIER {
+		operator := parser.consumeNextToken()
+		operand := parser.parseLValue()
+
+		return &AST.ExpressionPre{
+			Operator: operator,
+			Operand:  operand,
+		}
 	} else if current.Kind == Token.IDENTIFIER && next.Kind == Token.EQUALS {
 		lhs := parser.parseLValue()
 		parser.expect(Token.EQUALS)
@@ -90,7 +106,7 @@ func (parser *Parser) parseMultiplicativeExpression() AST.Expression {
 	return expr
 }
 
-// <additive>       ::= <Factor> (('+'|'-') <Factor>)*
+// <additive>       ::= <multiplicative> (('+'|'-') <multiplicative>)*
 func (parser *Parser) parseAdditiveExpression() AST.Expression {
 	expr := parser.parseMultiplicativeExpression()
 

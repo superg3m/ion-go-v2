@@ -34,6 +34,32 @@ type StatementIfElse struct {
 	ElseBlock *StatementBlock
 }
 
+type StatementFor struct {
+	StartLoopLabel string
+	EndLoopLabel   string
+
+	Condition   Expression
+	Initializer *DeclarationVariable
+	Increment   *StatementExpression
+	Block       *StatementBlock
+}
+
+type StatementWhile struct {
+	StartLoopLabel string
+	EndLoopLabel   string
+
+	Condition Expression
+	Block     *StatementBlock
+}
+
+type StatementContinue struct {
+	StartLoopLabel string
+}
+
+type StatementBreak struct {
+	EndLoopLabel string
+}
+
 type StatementNull struct {
 	Expr Expression
 }
@@ -53,5 +79,17 @@ func (*StatementExpression) isStatement() {}
 func (*StatementNull) isNode()      {}
 func (*StatementNull) isStatement() {}
 
-func (s StatementIfElse) isNode()      {}
-func (s StatementIfElse) isStatement() {}
+func (*StatementIfElse) isNode()      {}
+func (*StatementIfElse) isStatement() {}
+
+func (*StatementFor) isNode()      {}
+func (*StatementFor) isStatement() {}
+
+func (*StatementWhile) isNode()      {}
+func (*StatementWhile) isStatement() {}
+
+func (*StatementContinue) isNode()      {}
+func (*StatementContinue) isStatement() {}
+
+func (*StatementBreak) isNode()      {}
+func (*StatementBreak) isStatement() {}

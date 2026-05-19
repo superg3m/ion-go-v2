@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"ion/go/v2/AST"
 	"ion/go/v2/TS"
+	"ion/go/v2/Unique"
 )
 
 type StatementTypePair struct {
@@ -124,6 +125,10 @@ func typeCheckExpression(e AST.Expression, env *TypeEnv) TS.Type {
 
 	case *AST.ExpressionGrouping:
 		return typeCheckExpression(v.Expr, env)
+	case *AST.ExpressionPre:
+		return typeCheckExpression(v.Operand, env)
+	case *AST.ExpressionPost:
+		return typeCheckExpression(v.Operand, env)
 
 	/*
 		case *AST.ExpressionTypeCast:
@@ -248,37 +253,7 @@ func typeCheckStatement(s AST.Statement, env *TypeEnv) {
 				},
 			)
 		}
-
 	/*
-		case *AST.StatementBreak, *AST.StatementContinue:
-			if env.CurrentStatus != IN_LOOP {
-				panic("break statement is not in loop")
-			}
-
-		case *AST.StatementFor:
-			typeCheckDeclaration(v.Initializer, env)
-			condition := typeCheckExpression(v.Condition, env)
-			if _, ok := condition.(*TS.BoolType); !ok {
-				panic("For statement condition doesn't resolve to a bool it resolves to: " + condition.String())
-			}
-
-			typeCheckStatement(v.Increment, env)
-
-			env.CurrentStatus = IN_LOOP
-			for _, node := range v.Block.Body {
-				typeCheckNode(node, env)
-			}
-			env.CurrentStatus = NORMAL
-
-		case *AST.StatementWhile:
-			condition := typeCheckExpression(v.Condition, env)
-			if _, ok := condition.(*TS.BoolType); !ok {
-				panic("For statement condition doesn't resolve to a bool it resolves to: " + condition.String())
-			}
-
-			env.CurrentStatus = IN_LOOP
-			typeCheckStatement(v.Block, env)
-			env.CurrentStatus = NORMAL
 		case *AST.StatementDefer:
 			typeCheckNode(v.DeferredNode.(AST.Node), env)
 	*/
@@ -307,6 +282,56 @@ func typeCheckStatement(s AST.Statement, env *TypeEnv) {
 		if looselyComparable, err := TS.TypeLooseCompare(lhsType, rhsType); !looselyComparable {
 			panic(fmt.Sprintf("Line %d | Can't assign type %s to type %s | %s", v.LHSIdentifierToken.Line, rhsType.String(), lhsType.String(), err.Error()))
 		}
+
+	case *AST.StatementBreak:
+		if env.CurrentStatus != IN_LOOP {
+			panic("break statement is not in loop")
+		}
+
+		v.EndLoopLabel = env.EndLoopLabel
+	case *AST.StatementContinue:
+		if env.CurrentStatus != IN_LOOP {
+			panic("break statement is not in loop")
+		}
+
+		v.StartLoopLabel = env.StartLoopLabel
+	case *AST.StatementFor:
+		typeCheckDeclaration(v.Initializer, env)
+		condition := typeCheckExpression(v.Condition, env)
+		if _, ok := condition.(*TS.BoolType); !ok {
+			panic("For statement condition doesn't resolve to a bool it resolves to: " + condition.String())
+		}
+
+		typeCheckStatement(v.Increment, env)
+
+		env.CurrentStatus = IN_LOOP
+		env.StartLoopLabel = Unique.LabelName()
+		env.EndLoopLabel = Unique.LabelName()
+		v.StartLoopLabel = env.StartLoopLabel
+		v.EndLoopLabel = env.EndLoopLabel
+		for _, node := range v.Block.Body {
+			typeCheckNode(node, env)
+		}
+		env.StartLoopLabel = ""
+		env.EndLoopLabel = ""
+		env.CurrentStatus = NORMAL
+	case *AST.StatementWhile:
+		condition := typeCheckExpression(v.Condition, env)
+		if _, ok := condition.(*TS.BoolType); !ok {
+			panic("For statement condition doesn't resolve to a bool it resolves to: " + condition.String())
+		}
+
+		env.CurrentStatus = IN_LOOP
+		env.StartLoopLabel = Unique.LabelName()
+		env.EndLoopLabel = Unique.LabelName()
+		v.StartLoopLabel = env.StartLoopLabel
+		v.EndLoopLabel = env.EndLoopLabel
+		for _, node := range v.Block.Body {
+			typeCheckNode(node, env)
+		}
+		env.StartLoopLabel = ""
+		env.EndLoopLabel = ""
+		env.CurrentStatus = NORMAL
 
 	//case *AST.SE_FunctionCall:
 	//typeCheckFunctionCall(v, env)

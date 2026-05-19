@@ -7,9 +7,17 @@ import (
 	"ion/go/v2/Token"
 )
 
+type Context struct {
+	ParsingForIncrement bool
+	ParsingArrayLiteral int
+	// ParsedStructDeclaration map[string]*AST.DeclarationStruct
+}
+
 type Parser struct {
 	tokens  []Token.Token
 	current int
+
+	ctx Context
 }
 
 func (parser *Parser) consumeNextToken() Token.Token {

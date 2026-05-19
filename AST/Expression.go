@@ -54,6 +54,16 @@ type ExpressionAssignment struct {
 	RHS                Expression
 }
 
+type ExpressionPost struct {
+	Operator Token.Token
+	Operand  Expression
+}
+
+type ExpressionPre struct {
+	Operator Token.Token
+	Operand  Expression
+}
+
 func (*ExpressionBoolean) isNode()       {}
 func (*ExpressionBoolean) isExpression() {}
 func (*ExpressionBoolean) GetDeclType() TS.Type {
@@ -106,4 +116,16 @@ func (*ExpressionAssignment) isNode()       {}
 func (*ExpressionAssignment) isExpression() {}
 func (a *ExpressionAssignment) GetDeclType() TS.Type {
 	return a.LHS.GetDeclType()
+}
+
+func (*ExpressionPost) isNode()       {}
+func (*ExpressionPost) isExpression() {}
+func (a *ExpressionPost) GetDeclType() TS.Type {
+	return a.Operand.GetDeclType()
+}
+
+func (*ExpressionPre) isNode()       {}
+func (*ExpressionPre) isExpression() {}
+func (a *ExpressionPre) GetDeclType() TS.Type {
+	return a.Operand.GetDeclType()
 }

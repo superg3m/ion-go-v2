@@ -53,6 +53,8 @@ const (
 	LOGICAL_AND         = "LOGICAL_AND"         // "&&"
 	LOGICAL_OR          = "LOGICAL_OR"          // "||"
 	RIGHT_ARROW         = "RIGHT_ARROW"         // "->"
+	INCREMENT           = "INCREMENT"           // "++"
+	DECREMENT           = "DECREMENT"           // "--"
 
 	IDENTIFIER        = "IDENTIFIER"
 	INTEGER_LITERAL   = "INTEGER_LITERAL"
@@ -198,6 +200,8 @@ func GetSyntaxToken(input string) (TokenType, bool) {
 		"^=":  BITWISE_XOR_EQUALS,
 		"<<=": BITWISE_LS_EQUALS,
 		">>=": BITWISE_RS_EQUALS,
+		"++":  INCREMENT,
+		"--":  DECREMENT,
 	}
 
 	token, ok := m[input]

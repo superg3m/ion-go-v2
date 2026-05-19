@@ -5,21 +5,8 @@ import (
 	"ion/go/v2/AST"
 	"ion/go/v2/TS"
 	"ion/go/v2/Token"
+	"ion/go/v2/Unique"
 )
-
-var tempVariableCounter int
-var labelCounter int
-
-func uniqueTempVariableToken(token Token.Token) Token.Token {
-	tempVariableCounter += 1
-	token.Lexeme = fmt.Sprintf("temp.%d", tempVariableCounter)
-	return token
-}
-
-func uniqueLabelName() string {
-	labelCounter += 1
-	return fmt.Sprintf("%d", labelCounter)
-}
 
 type Definition interface {
 	isDefinition()
@@ -53,8 +40,8 @@ func emitFromStatement(stmt AST.Statement, instructions []Instruction) []Instruc
 	case *AST.StatementExpression:
 		instructions, _ = emitFromExpression(v.Expr, instructions)
 	case *AST.StatementIfElse:
-		elseLabel := uniqueLabelName()
-		endLabel := uniqueLabelName()
+		elseLabel := Unique.LabelName()
+		endLabel := Unique.LabelName()
 
 		var condition Value
 		instructions, condition = emitFromExpression(v.Condition, instructions)
@@ -77,6 +64,37 @@ func emitFromStatement(stmt AST.Statement, instructions []Instruction) []Instruc
 		for _, node := range v.Body {
 			instructions = append(instructions, emitFromNode(node)...)
 		}
+	case *AST.StatementContinue:
+		instructions = append(instructions, NewJumpInstruction(v.StartLoopLabel))
+	case *AST.StatementBreak:
+		instructions = append(instructions, NewJumpInstruction(v.EndLoopLabel))
+	case *AST.StatementFor:
+		instructions = emitFromDeclaration(v.Initializer, instructions)
+
+		var condition Value
+		instructions = append(instructions, NewLabelInstruction(v.StartLoopLabel))
+		instructions, condition = emitFromExpression(v.Condition, instructions)
+		instructions = append(instructions, NewConditionalJumpInstruction(v.EndLoopLabel, condition, true, false))
+
+		for _, node := range v.Block.Body {
+			instructions = append(instructions, emitFromNode(node)...)
+		}
+
+		instructions = emitFromStatement(v.Increment, instructions)
+		instructions = append(instructions, NewJumpInstruction(v.StartLoopLabel))
+		instructions = append(instructions, NewLabelInstruction(v.EndLoopLabel))
+	case *AST.StatementWhile:
+		var condition Value
+		instructions = append(instructions, NewLabelInstruction(v.StartLoopLabel))
+		instructions, condition = emitFromExpression(v.Condition, instructions)
+		instructions = append(instructions, NewConditionalJumpInstruction(v.EndLoopLabel, condition, true, false))
+
+		for _, node := range v.Block.Body {
+			instructions = append(instructions, emitFromNode(node)...)
+		}
+
+		instructions = append(instructions, NewJumpInstruction(v.StartLoopLabel))
+		instructions = append(instructions, NewLabelInstruction(v.EndLoopLabel))
 	case *AST.StatementCompoundAssignment:
 		var left, right Value
 		instructions, left = emitFromExpression(v.LHS, instructions)
@@ -122,7 +140,7 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 	case *AST.ExpressionUnary:
 		var source Value
 		instructions, source = emitFromExpression(v.Operand, instructions)
-		destination := NewVariable(uniqueTempVariableToken(v.Operator), source.GetDeclType())
+		destination := NewVariable(Unique.TempVariableToken(v.Operator), source.GetDeclType())
 		instructions = append(instructions, NewUnaryInstruction(v.Operator.Lexeme, source, destination))
 		return instructions, destination
 	case *AST.ExpressionAssignment:
@@ -135,11 +153,11 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 		var left, right Value
 		instructions, left = emitFromExpression(v.Left, instructions)
 		if v.Operator.Lexeme == "&&" {
-			zeroLabel := uniqueLabelName()
-			oneLabel := uniqueLabelName()
-			endLabel := uniqueLabelName()
+			zeroLabel := Unique.LabelName()
+			oneLabel := Unique.LabelName()
+			endLabel := Unique.LabelName()
 
-			result := NewVariable(uniqueTempVariableToken(v.Operator), left.GetDeclType())
+			result := NewVariable(Unique.TempVariableToken(v.Operator), left.GetDeclType())
 			instructions = append(instructions, NewConditionalJumpInstruction(zeroLabel, left, true, false))
 			instructions, right = emitFromExpression(v.Right, instructions)
 			instructions = append(instructions, NewLabelInstruction(oneLabel))
@@ -154,11 +172,11 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 
 			return instructions, result
 		} else if v.Operator.Lexeme == "||" {
-			zeroLabel := uniqueLabelName()
-			oneLabel := uniqueLabelName()
-			endLabel := uniqueLabelName()
+			zeroLabel := Unique.LabelName()
+			oneLabel := Unique.LabelName()
+			endLabel := Unique.LabelName()
 
-			result := NewVariable(uniqueTempVariableToken(v.Operator), left.GetDeclType())
+			result := NewVariable(Unique.TempVariableToken(v.Operator), left.GetDeclType())
 			instructions = append(instructions, NewConditionalJumpInstruction(oneLabel, left, false, true))
 			instructions, right = emitFromExpression(v.Right, instructions)
 			instructions = append(instructions, NewConditionalJumpInstruction(zeroLabel, right, true, false))
@@ -176,7 +194,7 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 		}
 
 		instructions, right = emitFromExpression(v.Right, instructions)
-		destination := NewVariable(uniqueTempVariableToken(v.Operator), left.GetDeclType())
+		destination := NewVariable(Unique.TempVariableToken(v.Operator), left.GetDeclType())
 		instructions = append(instructions, NewBinaryInstruction(v.Operator.Lexeme, left, right, destination))
 		return instructions, destination
 	default:

@@ -44,25 +44,16 @@ func (parser *Parser) parseStatementBlock() AST.Statement {
 	}
 }
 
-func (parser *Parser) parseAssignmentStatement() AST.Statement {
+func (parser *Parser) parseStatementExpression() AST.Statement {
 	tok := parser.peekNthToken(0)
-	lhs := parser.parseLValue()
-	parser.expect(Token.EQUALS)
-	rhs := parser.parseExpression()
-	parser.expect(Token.SEMI_COLON)
-	/*
-		if !parser.ctx.ParsingForIncrement {
-			parser.expect(Token.SEMI_COLON)
-		}
-	*/
+	expr := parser.parseExpression()
+	if !parser.ctx.ParsingForIncrement {
+		parser.expect(Token.SEMI_COLON)
+	}
 
 	return &AST.StatementExpression{
-		Tok: tok,
-		Expr: &AST.ExpressionAssignment{
-			LHSIdentifierToken: tok,
-			LHS:                lhs,
-			RHS:                rhs,
-		},
+		Tok:  tok,
+		Expr: expr,
 	}
 }
 
@@ -79,6 +70,39 @@ func (parser *Parser) parseCompoundAssignmentStatement(compoundAssignmentToken T
 		LHSIdentifierToken: tok,
 		LHS:                lhs,
 		RHS:                rhs,
+	}
+}
+
+func (parser *Parser) parseForStatement() AST.Statement {
+	parser.expect(Token.FOR)
+	parser.expect(Token.LEFT_PAREN)
+	initializer := parser.parseVariableDeclaration()
+	condition := parser.parseExpression()
+	parser.expect(Token.SEMI_COLON)
+	parser.ctx.ParsingForIncrement = true
+	increment := parser.parseStatementExpression()
+	parser.ctx.ParsingForIncrement = false
+	parser.expect(Token.RIGHT_PAREN)
+	block := parser.parseStatementBlock()
+
+	return &AST.StatementFor{
+		Initializer: initializer.(*AST.DeclarationVariable),
+		Condition:   condition,
+		Increment:   increment.(*AST.StatementExpression),
+		Block:       block.(*AST.StatementBlock),
+	}
+}
+
+func (parser *Parser) parseWhileStatement() AST.Statement {
+	parser.expect(Token.WHILE)
+	parser.expect(Token.LEFT_PAREN)
+	condition := parser.parseExpression()
+	parser.expect(Token.RIGHT_PAREN)
+	block := parser.parseStatementBlock()
+
+	return &AST.StatementWhile{
+		Condition: condition,
+		Block:     block.(*AST.StatementBlock),
 	}
 }
 
@@ -111,8 +135,18 @@ func (parser *Parser) parseStatement() AST.Statement {
 		return parser.parseStatementReturn()
 	} else if current.Kind == Token.IF {
 		return parser.parseIfElseStatement()
+	} else if current.Kind == Token.FOR {
+		return parser.parseForStatement()
+	} else if current.Kind == Token.WHILE {
+		return parser.parseWhileStatement()
+	} else if parser.consumeOnMatch(Token.BREAK) {
+		parser.expect(Token.SEMI_COLON)
+		return &AST.StatementBreak{}
+	} else if parser.consumeOnMatch(Token.CONTINUE) {
+		parser.expect(Token.SEMI_COLON)
+		return &AST.StatementContinue{}
 	} else if current.Kind == Token.IDENTIFIER && next.Kind == Token.EQUALS {
-		return parser.parseAssignmentStatement()
+		return parser.parseStatementExpression()
 	} else if current.Kind == Token.IDENTIFIER && Token.BinaryOperationFromCompoundAssignment(next.Lexeme) != "" {
 		return parser.parseCompoundAssignmentStatement(next.Kind)
 	}
