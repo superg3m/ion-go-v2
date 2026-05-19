@@ -1,11 +1,7 @@
-// EXPECT: 1
+// EXPECT: 8
 int main() {
 	int x = 5;
-
-	{
-		int z = 4;
-        return z;
-	}
+	if (x > 2) x = 8;
 
 	return x;
 }

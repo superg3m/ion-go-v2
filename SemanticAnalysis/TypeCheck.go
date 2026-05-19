@@ -284,7 +284,9 @@ func typeCheckStatement(s AST.Statement, env *TypeEnv) {
 	*/
 	case *AST.StatementIfElse:
 		condition := typeCheckExpression(v.Condition, env)
-		if _, ok := condition.(*TS.BoolType); !ok {
+		_, booleanResolution := condition.(*TS.BoolType)
+		_, integerResolution := condition.(*TS.IntegerType)
+		if !booleanResolution && !integerResolution {
 			panic("For statement condition doesn't resolve to a bool it resolves to: " + condition.String())
 		}
 
@@ -312,6 +314,24 @@ func typeCheckStatement(s AST.Statement, env *TypeEnv) {
 	default:
 		panic(fmt.Sprintf("undefined statement: %T", v))
 
+	}
+}
+
+func statementHasReturn(stmt AST.Statement) bool {
+	switch v := stmt.(type) {
+	case *AST.StatementReturn:
+		return true
+	case *AST.StatementBlock:
+		newStmt, _ := v.Body[len(v.Body)-1].(AST.Statement)
+		return statementHasReturn(newStmt)
+	case *AST.StatementIfElse:
+		if v.ElseBlock == nil {
+			return false
+		}
+
+		return statementHasReturn(v.ElseBlock)
+	default:
+		panic(fmt.Sprintf("undefined statement: %T", v))
 	}
 }
 
@@ -352,10 +372,7 @@ func typeCheckDeclaration(decl AST.Declaration, env *TypeEnv) {
 
 		returnType := functionType.ReturnType
 		_, isReturnTypeVoid := functionType.ReturnType.(*TS.VoidType)
-		hasReturnType := false
-		if len(v.Block.Body) > 0 {
-			_, hasReturnType = v.Block.Body[len(v.Block.Body)-1].(*AST.StatementReturn)
-		}
+		hasReturnType := statementHasReturn(v.Block)
 
 		if !hasReturnType && !isReturnTypeVoid {
 			panic(fmt.Sprintf("%s body is missing a return statement or it is not the last statement in the body", functionType.String()))

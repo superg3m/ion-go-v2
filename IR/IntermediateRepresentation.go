@@ -58,13 +58,17 @@ func emitFromStatement(stmt AST.Statement, instructions []Instruction) []Instruc
 
 		var condition Value
 		instructions, condition = emitFromExpression(v.Condition, instructions)
-		instructions = append(instructions, NewConditionalJumpInstruction(elseLabel, condition, true, false))
+		if v.ElseBlock != nil {
+			instructions = append(instructions, NewConditionalJumpInstruction(elseLabel, condition, true, false))
+		} else {
+			instructions = append(instructions, NewConditionalJumpInstruction(endLabel, condition, true, false))
+		}
 
 		instructions = emitFromStatement(v.ThenBlock, instructions)
-		instructions = append(instructions, NewJumpInstruction(elseLabel))
+		instructions = append(instructions, NewJumpInstruction(endLabel))
 
-		instructions = append(instructions, NewLabelInstruction(elseLabel))
 		if v.ElseBlock != nil {
+			instructions = append(instructions, NewLabelInstruction(elseLabel))
 			instructions = emitFromStatement(v.ElseBlock, instructions)
 		}
 

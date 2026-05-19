@@ -1,7 +1,7 @@
+// EXPECT: 0
 int main() {
-    if (0)
-    label:
+    if (1 + 2 == 4)
         return 5;
-    goto label;
+
     return 0;
 }

@@ -18,16 +18,24 @@ func (parser *Parser) parseStatementReturn() AST.Statement {
 
 func (parser *Parser) parseStatementBlock() AST.Statement {
 	var body []AST.Node
-	parser.expect(Token.LEFT_CURLY)
-	for !parser.consumeOnMatch(Token.RIGHT_CURLY) {
+
+	if parser.consumeOnMatch(Token.LEFT_CURLY) {
+		for !parser.consumeOnMatch(Token.RIGHT_CURLY) {
+			if decl := parser.parseDeclaration(); decl != nil {
+				body = append(body, decl)
+				continue
+			}
+
+			if stmt := parser.parseStatement(); stmt != nil {
+				body = append(body, stmt)
+				continue
+			}
+		}
+	} else {
 		if decl := parser.parseDeclaration(); decl != nil {
 			body = append(body, decl)
-			continue
-		}
-
-		if stmt := parser.parseStatement(); stmt != nil {
+		} else if stmt := parser.parseStatement(); stmt != nil {
 			body = append(body, stmt)
-			continue
 		}
 	}
 

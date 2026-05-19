@@ -5,6 +5,7 @@ import (
 	"ion/go/v2/AssemblyAST"
 	"ion/go/v2/IR"
 	"ion/go/v2/Symbol"
+	"slices"
 )
 
 func newOperand(value IR.Value) AssemblyAST.Operand {
@@ -109,6 +110,7 @@ func assemblyDefinitionFromIRDefinition(definition IR.Definition, globalSymbolTa
 
 		table := Symbol.CreateSymbolTable(globalSymbolTable)
 		instructions = ReplacePseudoRegisters(instructions, &table)
+		instructions = slices.Insert(instructions, 0, AssemblyAST.NewStackAllocateInstruction(table.StackOffset))
 		return &AssemblyAST.FunctionDefinition{
 			DeclType:     v.DeclType,
 			Tok:          v.Tok,

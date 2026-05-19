@@ -1,6 +1,4 @@
-#ifdef SUPPRESS_WARNINGS
-#pragma GCC diagnostic ignored "-Wdangling-else"
-#endif
+// EXPECT: 4
 int main() {
     int a = 0;
     if (!a)
