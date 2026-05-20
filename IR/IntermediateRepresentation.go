@@ -157,6 +157,28 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 		instructions = append(instructions, NewBinaryInstruction(Token.BinaryOperationFromCompoundAssignment(v.Operator.Lexeme), left, right, destination))
 
 		return instructions, destination
+	case *AST.ExpressionPost:
+		var operand Value
+		instructions, operand = emitFromExpression(v.Operand, instructions)
+		destination := NewVariable(Unique.TempVariableToken(v.Operator), operand.GetDeclType())
+		if v.Operator.Lexeme == "++" {
+			instructions = append(instructions, NewBinaryInstruction("+", operand, NewConstantValue(1, v.Operator), destination))
+		} else if v.Operator.Lexeme == "--" {
+			instructions = append(instructions, NewBinaryInstruction("-", operand, NewConstantValue(1, v.Operator), destination))
+		}
+
+		return instructions, operand
+	case *AST.ExpressionPre:
+		var operand Value
+		instructions, operand = emitFromExpression(v.Operand, instructions)
+		destination := NewVariable(Unique.TempVariableToken(v.Operator), operand.GetDeclType())
+		if v.Operator.Lexeme == "++" {
+			instructions = append(instructions, NewBinaryInstruction("+", operand, NewConstantValue(1, v.Operator), destination))
+		} else if v.Operator.Lexeme == "--" {
+			instructions = append(instructions, NewBinaryInstruction("-", operand, NewConstantValue(1, v.Operator), destination))
+		}
+
+		return instructions, destination
 	case *AST.ExpressionBinary:
 		var left, right Value
 		instructions, left = emitFromExpression(v.Left, instructions)

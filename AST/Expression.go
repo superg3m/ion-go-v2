@@ -61,6 +61,11 @@ type ExpressionCompoundAssignment struct {
 	RHS                Expression
 }
 
+type ExpressionFunctionCall struct {
+	Tok       Token.Token
+	arguments []Expression
+}
+
 type ExpressionPost struct {
 	Operator Token.Token
 	Operand  Expression
