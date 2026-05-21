@@ -14,6 +14,13 @@ func newOperand(value IR.Value) AssemblyAST.Operand {
 		return &AssemblyAST.Immediate{Value: v.Value}
 	case *IR.Variable:
 		return &AssemblyAST.Pseudo{DeclType: v.DeclType, Tok: v.Tok}
+	case *IR.ParameterVariable:
+		return &AssemblyAST.Parameter{
+			Tok:         v.Tok,
+			DeclType:    v.DeclType,
+			Register:    v.Register,
+			StackOffset: v.StackOffset,
+		}
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}
@@ -94,14 +101,8 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 		instructions = append(instructions, AssemblyAST.NewCompareInstruction(condition, zeroOperand))
 		instructions = append(instructions, AssemblyAST.NewConditionalJumpInstruction(v.TargetLabel, code))
 	case *IR.FunctionCall:
-		argumentRegisters := []AssemblyAST.Register{
-			AssemblyAST.RDI, AssemblyAST.RSI,
-			AssemblyAST.RDX, AssemblyAST.RCX,
-			AssemblyAST.R8, AssemblyAST.R9,
-		}
-
 		// NOTE(Jovanni): negative if there are less arguments than the actual argument registers
-		stackArgumentCount := max(0, len(v.Arguments)-len(argumentRegisters))
+		stackArgumentCount := max(0, len(v.Arguments)-len(AssemblyAST.ArgumentRegisters))
 
 		var stackPadding int
 		if stackArgumentCount%2 == 1 {
@@ -115,19 +116,19 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 		}
 
 		for i, arg := range v.Arguments {
-			if i >= len(argumentRegisters) {
+			if i >= len(AssemblyAST.ArgumentRegisters) {
 				break
 			}
 
 			source := newOperand(arg)
-			if i < len(argumentRegisters) {
-				register := AssemblyAST.NewRegisterOperand(argumentRegisters[i])
+			if i < len(AssemblyAST.ArgumentRegisters) {
+				register := AssemblyAST.NewRegisterOperand(AssemblyAST.ArgumentRegisters[i])
 				instructions = append(instructions, AssemblyAST.NewMoveInstruction(source, register))
 			}
 		}
 
 		if stackArgumentCount > 0 {
-			for i := len(argumentRegisters) + (stackArgumentCount - 1); i <= len(argumentRegisters); i -= 1 {
+			for i := len(AssemblyAST.ArgumentRegisters) + (stackArgumentCount - 1); i <= len(AssemblyAST.ArgumentRegisters); i -= 1 {
 				_, isVariable := v.Arguments[i].(*IR.Variable)
 				_, isConstant := v.Arguments[i].(*IR.Constant)
 				arg := newOperand(v.Arguments[i])
@@ -267,24 +268,24 @@ func ReplaceInvalidInstructions(program AssemblyAST.Program) AssemblyAST.Program
 		switch v := def.(type) {
 		case *AssemblyAST.FunctionDefinition:
 			newInstructions := make([]AssemblyAST.Instruction, 0, len(v.Instructions)*2)
-			R10D := AssemblyAST.NewRegisterOperand(AssemblyAST.R10)
+			R10 := AssemblyAST.NewRegisterOperand(AssemblyAST.R10)
 			for _, inst := range v.Instructions {
 				switch v := inst.(type) {
 				case *AssemblyAST.InstructionMove:
 					if _, ok := v.Source.(*AssemblyAST.Stack); ok {
 						if _, ok2 := v.Destination.(*AssemblyAST.Stack); ok2 {
-							newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Source, R10D))
-							v.Source = R10D
+							newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Source, R10))
+							v.Source = R10
 						}
 					}
 				case *AssemblyAST.InstructionBinary:
 					if v.Operator == "*" {
 						if _, ok2 := v.Left.(*AssemblyAST.Register); !ok2 {
 							previousDestination := v.Left
-							newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10D))
-							v.Left = R10D
+							newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10))
+							v.Left = R10
 							newInstructions = append(newInstructions, v)
-							newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(R10D, previousDestination))
+							newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(R10, previousDestination))
 							continue
 						}
 					}
@@ -292,22 +293,22 @@ func ReplaceInvalidInstructions(program AssemblyAST.Program) AssemblyAST.Program
 					if _, ok := v.Left.(*AssemblyAST.Stack); ok {
 						if _, ok2 := v.Right.(*AssemblyAST.Stack); ok2 {
 							previousDestination := v.Left
-							newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10D))
-							v.Left = R10D
+							newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10))
+							v.Left = R10
 							newInstructions = append(newInstructions, v)
-							newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(R10D, previousDestination))
+							newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(R10, previousDestination))
 							continue
 						}
 					}
 				case *AssemblyAST.InstructionDivide:
 					if _, ok := v.Left.(*AssemblyAST.Register); !ok {
-						newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10D))
-						v.Left = R10D
+						newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10))
+						v.Left = R10
 					}
 				case *AssemblyAST.InstructionCompare:
 					if _, ok := v.Left.(*AssemblyAST.Register); !ok {
-						newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10D))
-						v.Left = R10D
+						newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10))
+						v.Left = R10
 					}
 				case *AssemblyAST.InstructionReturn, *AssemblyAST.InstructionCDQ,
 					*AssemblyAST.InstructionStackAllocate, *AssemblyAST.InstructionUnary,

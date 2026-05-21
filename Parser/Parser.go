@@ -116,9 +116,8 @@ func (parser *Parser) parseParameters() []TS.Parameter {
 
 	parser.expect(Token.LEFT_PAREN)
 	for !parser.consumeOnMatch(Token.RIGHT_PAREN) {
-		param := parser.expect(Token.IDENTIFIER)
-		parser.expect(Token.COLON)
 		dataType := parser.parseType()
+		param := parser.expect(Token.IDENTIFIER)
 
 		params = append(params, TS.Parameter{
 			Tok:      param,

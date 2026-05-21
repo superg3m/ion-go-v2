@@ -3,6 +3,7 @@ package IR
 import (
 	"fmt"
 	"ion/go/v2/AST"
+	"ion/go/v2/AssemblyAST"
 	"ion/go/v2/TS"
 	"ion/go/v2/Token"
 	"ion/go/v2/Unique"
@@ -30,6 +31,8 @@ type VariableDefinition struct {
 
 func (*FunctionDefinition) isDefinition() {}
 func (*VariableDefinition) isDefinition() {}
+
+var activeParams []TS.Parameter = nil
 
 func emitFromStatement(stmt AST.Statement, instructions []Instruction) []Instruction {
 	switch v := stmt.(type) {
@@ -118,10 +121,6 @@ func emitFromDeclaration(decl AST.Declaration, instructions []Instruction) []Ins
 
 		destination := NewVariable(v.Tok, v.DeclType)
 		instructions = append(instructions, NewCopyInstruction(value, destination))
-	case *AST.DeclarationFunction:
-		for _, node := range v.Block.Body {
-			instructions = append(instructions, emitFromNode(node)...)
-		}
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}
@@ -136,6 +135,30 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 	case *AST.ExpressionInteger:
 		return instructions, NewConstantValue(v.Value, v.Tok)
 	case *AST.ExpressionVariable:
+		for i, param := range activeParams {
+			if v.Tok.Lexeme == param.Tok.Lexeme {
+				if i >= len(AssemblyAST.ArgumentRegisters) {
+					offset := 8
+					offset += (i - len(AssemblyAST.ArgumentRegisters)) * 8
+
+					return instructions, &ParameterVariable{
+						Tok:         v.Tok,
+						Register:    AssemblyAST.INVALID,
+						StackOffset: offset,
+						DeclType:    v.DeclType,
+					}
+				}
+
+				register := AssemblyAST.ArgumentRegisters[i]
+				return instructions, &ParameterVariable{
+					Tok:         v.Tok,
+					Register:    register,
+					StackOffset: -1,
+					DeclType:    v.DeclType,
+				}
+			}
+		}
+
 		return instructions, NewVariable(v.Tok, v.DeclType)
 	case *AST.ExpressionUnary:
 		var source Value
@@ -281,7 +304,9 @@ func emitDefinitionFromDeclaration(decl AST.Declaration) Definition {
 			Instructions: instructions,
 		}
 	case *AST.DeclarationFunction:
+		activeParams = v.DeclType.(*TS.FunctionType).Params
 		instructions = append(instructions, emitFromStatement(v.Block, instructions)...)
+		activeParams = nil
 
 		return &FunctionDefinition{
 			DeclType:     v.DeclType,

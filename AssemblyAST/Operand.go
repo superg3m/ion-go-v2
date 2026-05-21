@@ -18,7 +18,8 @@ type Immediate struct {
 type Register int
 
 const (
-	RAX Register = iota
+	INVALID Register = iota
+	RAX     Register = iota
 	RBX
 	RCX
 	RDX
@@ -35,6 +36,8 @@ const (
 	R14
 	R15
 )
+
+var ArgumentRegisters = []Register{RDI, RSI, RDX, RCX, R8, R9}
 
 type RegisterNames struct {
 	X64 string
@@ -70,6 +73,13 @@ type Pseudo struct {
 
 type Stack struct {
 	Offset int
+}
+
+type Parameter struct {
+	Tok         Token.Token
+	DeclType    TS.Type
+	Register    Register
+	StackOffset int
 }
 
 func NewRegisterOperand(register Register) Operand {
@@ -121,4 +131,13 @@ func (r *Pseudo) ToString() string {
 func (*Stack) isOperand() {}
 func (r *Stack) ToString() string {
 	return fmt.Sprintf("-%d(%%rbp)", r.Offset)
+}
+
+func (*Parameter) isOperand() {}
+func (p *Parameter) ToString() string {
+	if p.Register == INVALID {
+		return fmt.Sprintf("-%d(%%rbp)", p.StackOffset)
+	}
+
+	return p.Register.ToString()
 }
