@@ -1,11 +1,12 @@
 .text
-.global main
-main:
+.global _main
+_main:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $-16, %rsp
+	subq $32, %rsp
 	movl $1, -4(%rbp)
 	movl $5, -8(%rbp)
+	subq $8, %rsp
 	movl $3, %edi
 	movl $10, %esi
 	movl $1, %edx
@@ -14,8 +15,8 @@ main:
 	movl $4, %r9d
 	pushq $6
 	pushq $5
-	call get_integer
-	addq $16, %rsp
+	call _get_integer
+	addq $24, %rsp
 	movl %eax, -8(%rbp)
 	movl -8(%rbp), %r10d
 	movl %r10d, -4(%rbp)
@@ -28,6 +29,76 @@ main:
 	movl %r10d, -4(%rbp)
 	movl -12(%rbp), %r10d
 	movl %r10d, -8(%rbp)
+	subq $8, %rsp
+	movl $72, %edi
+	call _putchar
+	addq $8, %rsp
+	movl %eax, -12(%rbp)
+	subq $8, %rsp
+	movl $101, %edi
+	call _putchar
+	addq $8, %rsp
+	movl %eax, -12(%rbp)
+	subq $8, %rsp
+	movl $108, %edi
+	call _putchar
+	addq $8, %rsp
+	movl %eax, -12(%rbp)
+	subq $8, %rsp
+	movl $108, %edi
+	call _putchar
+	addq $8, %rsp
+	movl %eax, -12(%rbp)
+	subq $8, %rsp
+	movl $111, %edi
+	call _putchar
+	addq $8, %rsp
+	movl %eax, -12(%rbp)
+	subq $8, %rsp
+	movl $44, %edi
+	call _putchar
+	addq $8, %rsp
+	movl %eax, -12(%rbp)
+	subq $8, %rsp
+	movl $32, %edi
+	call _putchar
+	addq $8, %rsp
+	movl %eax, -12(%rbp)
+	subq $8, %rsp
+	movl $87, %edi
+	call _putchar
+	addq $8, %rsp
+	movl %eax, -12(%rbp)
+	subq $8, %rsp
+	movl $111, %edi
+	call _putchar
+	addq $8, %rsp
+	movl %eax, -12(%rbp)
+	subq $8, %rsp
+	movl $114, %edi
+	call _putchar
+	addq $8, %rsp
+	movl %eax, -12(%rbp)
+	subq $8, %rsp
+	movl $108, %edi
+	call _putchar
+	addq $8, %rsp
+	movl %eax, -12(%rbp)
+	subq $8, %rsp
+	movl $100, %edi
+	call _putchar
+	addq $8, %rsp
+	movl %eax, -12(%rbp)
+	subq $8, %rsp
+	movl $33, %edi
+	call _putchar
+	addq $8, %rsp
+	movl %eax, -12(%rbp)
+	subq $8, %rsp
+	movl $10, %edi
+	call _putchar
+	addq $8, %rsp
+	movl %eax, -12(%rbp)
 	movl -4(%rbp), %r10d
 	cmpl $15, %r10d
 	movl $0, -16(%rbp)
@@ -52,11 +123,11 @@ main:
 	movq %rbp, %rsp
 	popq %rbp
 	ret
-.global get_integer
-get_integer:
+.global _get_integer
+_get_integer:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $0, %rsp
+	subq $16, %rsp
 	movl %edi, -4(%rbp)
 	movl -4(%rbp), %r10d
 	addl 16(%rbp), %r10d

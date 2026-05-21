@@ -87,7 +87,7 @@ func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 	case *AssemblyAST.InstructionStackPush:
 		instructions = []string{fmt.Sprintf("\tpushq %s", v.Source.ToString())}
 	case *AssemblyAST.InstructionFunctionCall:
-		instructions = []string{fmt.Sprintf("\tcall %s", v.Identifier)}
+		instructions = []string{fmt.Sprintf("\tcall _%s", v.Identifier)}
 	case *AssemblyAST.InstructionLabel:
 		instructions = []string{fmt.Sprintf(".L%s:", v.Identifier)}
 	default:
@@ -99,8 +99,8 @@ func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 
 func (e *ATTx64Emitter) EmitFunctionDefinition(functionDefinition *AssemblyAST.FunctionDefinition) []string {
 	instructions := []string{
-		fmt.Sprintf(".global %s", functionDefinition.Tok.Lexeme),
-		fmt.Sprintf("%s:", functionDefinition.Tok.Lexeme),
+		fmt.Sprintf(".global _%s", functionDefinition.Tok.Lexeme),
+		fmt.Sprintf("_%s:", functionDefinition.Tok.Lexeme),
 	}
 
 	instructions = append(instructions, EmitFunctionPrologue()...)

@@ -105,7 +105,7 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 		stackArgumentCount := max(0, len(v.Arguments)-len(AssemblyAST.ArgumentRegisters))
 
 		var stackPadding int
-		if stackArgumentCount%2 == 1 {
+		if stackArgumentCount%2 == 0 {
 			stackPadding = 8
 		} else {
 			stackPadding = 0
@@ -171,6 +171,13 @@ func getNext16ByteAligned(totalAllocationSize int) int {
 	return totalAllocationSize
 }
 
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
 func assemblyDefinitionFromIRDefinition(definition IR.Definition, globalSymbolTable *Symbol.SymbolTable) AssemblyAST.Definition {
 	var instructions []AssemblyAST.Instruction
 
@@ -182,7 +189,7 @@ func assemblyDefinitionFromIRDefinition(definition IR.Definition, globalSymbolTa
 
 		table := Symbol.CreateSymbolTable(globalSymbolTable)
 		instructions = ReplacePseudoRegisters(instructions, &table)
-		table.StackOffset = getNext16ByteAligned(table.StackOffset)
+		table.StackOffset = getNext16ByteAligned(abs(table.StackOffset))
 		instructions = slices.Insert(instructions, 0, AssemblyAST.NewStackAllocateInstruction(table.StackOffset))
 		return &AssemblyAST.FunctionDefinition{
 			DeclType:     v.DeclType,
@@ -255,7 +262,8 @@ func ReplacePseudoRegisters(instructions []AssemblyAST.Instruction, table *Symbo
 		case *AssemblyAST.InstructionReturn, *AssemblyAST.InstructionCDQ,
 			*AssemblyAST.InstructionConditionalJump, *AssemblyAST.InstructionLabel,
 			*AssemblyAST.InstructionJump, *AssemblyAST.InstructionFunctionCall,
-			*AssemblyAST.InstructionDeallocateStack, *AssemblyAST.InstructionStackPush:
+			*AssemblyAST.InstructionDeallocateStack, *AssemblyAST.InstructionStackPush,
+			*AssemblyAST.InstructionStackAllocate:
 		default:
 			panic(fmt.Sprintf("Unknown instruction %T", v))
 		}

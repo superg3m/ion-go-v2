@@ -53,6 +53,7 @@ func emitInstructions(output string, assembly AssemblyAST.Program) error {
 func buildExecutable(asmPath string, exePath string) error {
 	out, err := exec.Command(
 		"gcc",
+		"-arch", "x86_64",
 		asmPath,
 		"-o",
 		exePath,

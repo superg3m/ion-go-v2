@@ -144,7 +144,7 @@ func (parser *Parser) parseStatement() AST.Statement {
 	} else if parser.consumeOnMatch(Token.CONTINUE) {
 		parser.expect(Token.SEMI_COLON)
 		return &AST.StatementContinue{}
-	} else if current.Kind == Token.IDENTIFIER && next.Kind == Token.EQUALS {
+	} else if current.Kind == Token.IDENTIFIER && (next.Kind == Token.EQUALS || next.Kind == Token.LEFT_PAREN) {
 		return parser.parseStatementExpression()
 	} else if current.Kind == Token.IDENTIFIER && Token.BinaryOperationFromCompoundAssignment(next.Lexeme) != "" {
 		return parser.parseCompoundAssignmentStatement(next.Kind)
