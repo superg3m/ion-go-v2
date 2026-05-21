@@ -40,23 +40,23 @@ _fib:
 	pushq %rdi
 	movl -16(%rbp), %edi
 	call _fib
-	movl %eax, -16(%rbp)
-	popq %rdi
-	movl %edi, -20(%rbp)
-	movl -20(%rbp), %r10d
-	subl $2, %r10d
-	movl %r10d, -20(%rbp)
-	pushq %rdi
-	movl -20(%rbp), %edi
-	call _fib
 	movl %eax, -20(%rbp)
 	popq %rdi
-	movl -16(%rbp), %r10d
-	movl %r10d, -20(%rbp)
+	movl %edi, -24(%rbp)
+	movl -24(%rbp), %r10d
+	subl $2, %r10d
+	movl %r10d, -24(%rbp)
+	pushq %rdi
+	movl -24(%rbp), %edi
+	call _fib
+	movl %eax, -28(%rbp)
+	popq %rdi
 	movl -20(%rbp), %r10d
-	addl -20(%rbp), %r10d
-	movl %r10d, -20(%rbp)
-	movl -20(%rbp), %eax
+	movl %r10d, -32(%rbp)
+	movl -32(%rbp), %r10d
+	addl -28(%rbp), %r10d
+	movl %r10d, -32(%rbp)
+	movl -32(%rbp), %eax
 	movq %rbp, %rsp
 	popq %rbp
 	ret
@@ -70,9 +70,9 @@ _main:
 	pushq %rdi
 	movl -4(%rbp), %edi
 	call _fib
-	movl %eax, -4(%rbp)
+	movl %eax, -8(%rbp)
 	popq %rdi
-	movl -4(%rbp), %eax
+	movl -8(%rbp), %eax
 	movq %rbp, %rsp
 	popq %rbp
 	ret

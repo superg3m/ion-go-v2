@@ -308,6 +308,7 @@ func (a *AliasType) String() string {
 
 func (f *FunctionType) isType()          {}
 func (f *FunctionType) IsFunction() bool { return true }
+func (f *FunctionType) Size() int        { return f.ReturnType.Size() }
 func (f *FunctionType) String() string {
 	ret := "fn("
 	for i, param := range f.Params {
