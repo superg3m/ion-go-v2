@@ -9,6 +9,7 @@ import (
 type Operand interface {
 	isOperand()
 	ToString() string
+	IsStackAllocated() bool
 }
 
 type Immediate struct {
@@ -97,12 +98,14 @@ func NewImmediateOperand(value int) Operand {
 	return &Immediate{Value: value}
 }
 
-func (*Immediate) isOperand() {}
+func (*Immediate) isOperand()             {}
+func (*Immediate) IsStackAllocated() bool { return false }
 func (i *Immediate) ToString() string {
 	return fmt.Sprintf("$%d", i.Value)
 }
 
-func (*Register) isOperand() {}
+func (*Register) isOperand()             {}
+func (*Register) IsStackAllocated() bool { return false }
 func (r *Register) ToString() string {
 	return r.X32BitName()
 }
@@ -123,17 +126,20 @@ func (r *Register) X8BitName() string {
 	return RegisterLookup[*r].X8
 }
 
-func (*Pseudo) isOperand() {}
+func (*Pseudo) isOperand()             {}
+func (*Pseudo) IsStackAllocated() bool { return true }
 func (r *Pseudo) ToString() string {
 	return "PSEUDO"
 }
 
-func (*Stack) isOperand() {}
+func (*Stack) isOperand()             {}
+func (*Stack) IsStackAllocated() bool { return true }
 func (r *Stack) ToString() string {
-	return fmt.Sprintf("-%d(%%rbp)", r.Offset)
+	return fmt.Sprintf("%d(%%rbp)", r.Offset)
 }
 
-func (*Parameter) isOperand() {}
+func (*Parameter) isOperand()               {}
+func (p *Parameter) IsStackAllocated() bool { return p.StackOffset != 0 }
 func (p *Parameter) ToString() string {
 	if p.Register == INVALID {
 		return fmt.Sprintf("%d(%%rbp)", p.StackOffset)

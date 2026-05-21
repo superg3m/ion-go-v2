@@ -153,7 +153,7 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 				return instructions, &ParameterVariable{
 					Tok:         v.Tok,
 					Register:    register,
-					StackOffset: -1,
+					StackOffset: 0,
 					DeclType:    v.DeclType,
 				}
 			}

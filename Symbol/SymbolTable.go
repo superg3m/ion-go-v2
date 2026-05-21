@@ -89,7 +89,7 @@ func (s *SymbolTable) GetOffset(key Token.Token) int {
 	}
 
 	panic(fmt.Sprintf("Line: %d | Undeclared Identifier: %s", key.Line, key.Lexeme))
-	return -1
+	return 0
 }
 
 func (s *SymbolTable) Set(key Token.Token, symbol Symbol, offset int) {

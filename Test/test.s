@@ -3,7 +3,7 @@
 main:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $32, %rsp
+	subq $-16, %rsp
 	movl $1, -4(%rbp)
 	movl $5, -8(%rbp)
 	movl $3, %edi
@@ -23,18 +23,20 @@ main:
 	movl %r10d, -12(%rbp)
 	movl -4(%rbp), %r10d
 	movl %r10d, -4(%rbp)
-	addl $1, -4(%rbp)
+	movl -4(%rbp), %r10d
+	addl $1, %r10d
+	movl %r10d, -4(%rbp)
 	movl -12(%rbp), %r10d
 	movl %r10d, -8(%rbp)
 	movl -4(%rbp), %r10d
-	cmpl $12, %r10d
+	cmpl $15, %r10d
 	movl $0, -16(%rbp)
 	sete -16(%rbp)
 	movl -16(%rbp), %r10d
 	cmpl $0, %r10d
 	je .L1
 	movl -8(%rbp), %r10d
-	cmpl $11, %r10d
+	cmpl $14, %r10d
 	movl $0, -20(%rbp)
 	sete -20(%rbp)
 .L2:
@@ -54,12 +56,16 @@ main:
 get_integer:
 	pushq %rbp
 	movq %rsp, %rbp
-	subq $16, %rsp
+	subq $0, %rsp
 	movl %edi, -4(%rbp)
-	addl 16(%rbp), -4(%rbp)
+	movl -4(%rbp), %r10d
+	addl 16(%rbp), %r10d
+	movl %r10d, -4(%rbp)
 	movl -4(%rbp), %r10d
 	movl %r10d, -8(%rbp)
-	addl 24(%rbp), -8(%rbp)
+	movl -8(%rbp), %r10d
+	addl 24(%rbp), %r10d
+	movl %r10d, -8(%rbp)
 	movl -8(%rbp), %eax
 	movq %rbp, %rsp
 	popq %rbp

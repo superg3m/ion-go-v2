@@ -225,7 +225,7 @@ func replacePseudoOperand(table *Symbol.SymbolTable, operand AssemblyAST.Operand
 			offset := table.GetOffset(v.Tok)
 			operand = AssemblyAST.NewStackOperand(offset)
 		} else {
-			table.StackOffset += v.DeclType.Size()
+			table.StackOffset -= v.DeclType.Size()
 			table.Set(v.Tok, Symbol.CreateSymbol(v.Tok, v.DeclType), table.StackOffset)
 			operand = AssemblyAST.NewStackOperand(table.StackOffset)
 		}
@@ -291,8 +291,10 @@ func ReplaceInvalidInstructions(program AssemblyAST.Program) AssemblyAST.Program
 						}
 					}
 
-					if _, ok := v.Left.(*AssemblyAST.Stack); ok {
-						if _, ok2 := v.Right.(*AssemblyAST.Stack); ok2 {
+					isLeftOnStack := v.Left.IsStackAllocated()
+					isRightOnStack := v.Left.IsStackAllocated()
+					if isLeftOnStack {
+						if isRightOnStack {
 							previousDestination := v.Left
 							newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10))
 							v.Left = R10

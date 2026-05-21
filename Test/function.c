@@ -7,7 +7,7 @@ int main() {
     x = get_integer(3, 10, 1, 2, 3, 4, 5, 6);
     y = x++;
 
-    return x == 12 && y == 11;
+    return x == 15 && y == 14;
 }
 
 
