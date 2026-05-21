@@ -1,11 +1,4 @@
-/* Call functions with both even and odd numbers of stack arguments,
- * to make sure the stack is correctly aligned in both cases.
- */
-
-// these are defined in stack_alignment_check_<platform>.s
-// and exit with value -1 if RSP is misaligned or arguments
-// don't have the expected values
-
+// EXPECT: 1
 int even_arguments(int a, int b, int c, int d, int e, int f, int g, int h);
 int odd_arguments(int a, int b, int c, int d, int e, int f, int g, int h, int i);
 

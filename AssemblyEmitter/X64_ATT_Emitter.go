@@ -85,11 +85,36 @@ func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 			}
 		}
 	case *AssemblyAST.InstructionStackPush:
-		instructions = []string{fmt.Sprintf("\tpushq %s", v.Source.ToString())}
+		switch t := v.Source.(type) {
+		case *AssemblyAST.Register:
+			instructions = []string{fmt.Sprintf("\tpushq %s", t.X64BitName())}
+		case *AssemblyAST.Parameter:
+			if t.Register == AssemblyAST.INVALID {
+				instructions = []string{fmt.Sprintf("\tpushq %s", t.Register.X64BitName())}
+			} else {
+				instructions = []string{fmt.Sprintf("\tpushq %s", t.Register.ToString())}
+			}
+		default:
+			instructions = []string{fmt.Sprintf("\tpushq %s", t.ToString())}
+		}
+
 	case *AssemblyAST.InstructionFunctionCall:
 		instructions = []string{fmt.Sprintf("\tcall _%s", v.Identifier)}
 	case *AssemblyAST.InstructionLabel:
 		instructions = []string{fmt.Sprintf(".L%s:", v.Identifier)}
+	case *AssemblyAST.InstructionStackPop:
+		switch t := v.Destination.(type) {
+		case *AssemblyAST.Register:
+			instructions = []string{fmt.Sprintf("\tpopq %s", t.X64BitName())}
+		case *AssemblyAST.Parameter:
+			if t.Register == AssemblyAST.INVALID {
+				instructions = []string{fmt.Sprintf("\tpopq %s", t.Register.X64BitName())}
+			} else {
+				instructions = []string{fmt.Sprintf("\tpopq %s", t.Register.ToString())}
+			}
+		default:
+			instructions = []string{fmt.Sprintf("\tpopq %s", t.ToString())}
+		}
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", inst))
 	}

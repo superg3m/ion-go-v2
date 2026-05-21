@@ -123,6 +123,7 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 			source := newOperand(arg)
 			if i < len(AssemblyAST.ArgumentRegisters) {
 				register := AssemblyAST.NewRegisterOperand(AssemblyAST.ArgumentRegisters[i])
+				instructions = append(instructions, AssemblyAST.NewStackPushInstruction(register))
 				instructions = append(instructions, AssemblyAST.NewMoveInstruction(source, register))
 			}
 		}
@@ -152,6 +153,17 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 		destination := newOperand(v.Destination)
 		if destination != nil {
 			instructions = append(instructions, AssemblyAST.NewMoveInstruction(rax, destination))
+		}
+
+		for i, _ := range v.Arguments {
+			if i >= len(AssemblyAST.ArgumentRegisters) {
+				break
+			}
+
+			if i < len(AssemblyAST.ArgumentRegisters) {
+				register := AssemblyAST.NewRegisterOperand(AssemblyAST.ArgumentRegisters[i])
+				instructions = append(instructions, AssemblyAST.NewStackPop(register))
+			}
 		}
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", v))
@@ -264,8 +276,8 @@ func ReplacePseudoRegisters(instructions []AssemblyAST.Instruction, table *Symbo
 		case *AssemblyAST.InstructionReturn, *AssemblyAST.InstructionCDQ,
 			*AssemblyAST.InstructionConditionalJump, *AssemblyAST.InstructionLabel,
 			*AssemblyAST.InstructionJump, *AssemblyAST.InstructionFunctionCall,
-			*AssemblyAST.InstructionDeallocateStack,
-			*AssemblyAST.InstructionStackAllocate:
+			*AssemblyAST.InstructionDeallocateStack, *AssemblyAST.InstructionStackAllocate,
+			*AssemblyAST.InstructionStackPop:
 		default:
 			panic(fmt.Sprintf("Unknown instruction %T", v))
 		}
@@ -329,7 +341,7 @@ func ReplaceInvalidInstructions(program AssemblyAST.Program) AssemblyAST.Program
 					*AssemblyAST.InstructionConditionalJump, *AssemblyAST.InstructionLabel,
 					*AssemblyAST.InstructionJump, *AssemblyAST.InstructionSetConditionalCode,
 					*AssemblyAST.InstructionFunctionCall, *AssemblyAST.InstructionDeallocateStack,
-					*AssemblyAST.InstructionStackPush:
+					*AssemblyAST.InstructionStackPush, *AssemblyAST.InstructionStackPop:
 				default:
 					panic(fmt.Sprintf("Unknown instruction %T", v))
 				}

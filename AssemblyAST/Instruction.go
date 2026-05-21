@@ -87,6 +87,10 @@ type InstructionStackPush struct {
 	Source Operand
 }
 
+type InstructionStackPop struct {
+	Destination Operand
+}
+
 type InstructionDeallocateStack struct {
 	Value int
 }
@@ -188,6 +192,12 @@ func NewDivideInstruction(left Operand) Instruction {
 	}
 }
 
+func NewStackPop(destination Operand) Instruction {
+	return &InstructionStackPop{
+		Destination: destination,
+	}
+}
+
 func (*InstructionMove) isInstruction()          {}
 func (*InstructionReturn) isInstruction()        {}
 func (*InstructionStackAllocate) isInstruction() {}
@@ -203,5 +213,6 @@ func (*InstructionSetConditionalCode) isInstruction() {}
 func (*InstructionLabel) isInstruction()              {}
 
 func (*InstructionStackPush) isInstruction()       {}
+func (*InstructionStackPop) isInstruction()        {}
 func (*InstructionDeallocateStack) isInstruction() {}
 func (*InstructionFunctionCall) isInstruction()    {}
