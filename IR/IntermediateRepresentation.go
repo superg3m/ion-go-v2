@@ -121,6 +121,10 @@ func emitFromDeclaration(decl AST.Declaration, instructions []Instruction) []Ins
 
 		destination := NewVariable(v.Tok, v.DeclType)
 		instructions = append(instructions, NewCopyInstruction(value, destination))
+	case *AST.DeclarationFunction:
+		panic(fmt.Sprintf("Nested functions are not allowed right now | Line: %d", v.Tok.Line))
+	case *AST.DeclarationFunctionPrototype:
+		panic(fmt.Sprintf("Non-global Function prototypes are not allowed right now | Line: %d", v.Tok.Line))
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}

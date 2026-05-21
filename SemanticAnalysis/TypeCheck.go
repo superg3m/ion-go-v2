@@ -358,6 +358,8 @@ func statementHasReturn(stmt AST.Statement) bool {
 	case *AST.StatementBlock:
 		newStmt, _ := v.Body[len(v.Body)-1].(AST.Statement)
 		return statementHasReturn(newStmt)
+	case *AST.StatementExpression:
+		return false
 	case *AST.StatementIfElse:
 		if v.ElseBlock == nil {
 			return false

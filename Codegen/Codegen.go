@@ -105,7 +105,7 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 		stackArgumentCount := max(0, len(v.Arguments)-len(AssemblyAST.ArgumentRegisters))
 
 		var stackPadding int
-		if stackArgumentCount%2 == 0 {
+		if stackArgumentCount%2 == 1 {
 			stackPadding = 8
 		} else {
 			stackPadding = 0
@@ -259,10 +259,12 @@ func ReplacePseudoRegisters(instructions []AssemblyAST.Instruction, table *Symbo
 		case *AssemblyAST.InstructionCompare:
 			v.Left = replacePseudoOperand(table, v.Left)
 			v.Right = replacePseudoOperand(table, v.Right)
+		case *AssemblyAST.InstructionStackPush:
+			v.Source = replacePseudoOperand(table, v.Source)
 		case *AssemblyAST.InstructionReturn, *AssemblyAST.InstructionCDQ,
 			*AssemblyAST.InstructionConditionalJump, *AssemblyAST.InstructionLabel,
 			*AssemblyAST.InstructionJump, *AssemblyAST.InstructionFunctionCall,
-			*AssemblyAST.InstructionDeallocateStack, *AssemblyAST.InstructionStackPush,
+			*AssemblyAST.InstructionDeallocateStack,
 			*AssemblyAST.InstructionStackAllocate:
 		default:
 			panic(fmt.Sprintf("Unknown instruction %T", v))
@@ -274,18 +276,19 @@ func ReplacePseudoRegisters(instructions []AssemblyAST.Instruction, table *Symbo
 
 func ReplaceInvalidInstructions(program AssemblyAST.Program) AssemblyAST.Program {
 	for _, def := range program.Definitions {
-		switch v := def.(type) {
+		switch d := def.(type) {
 		case *AssemblyAST.FunctionDefinition:
-			newInstructions := make([]AssemblyAST.Instruction, 0, len(v.Instructions)*2)
+			newInstructions := make([]AssemblyAST.Instruction, 0, len(d.Instructions)*2)
 			R10 := AssemblyAST.NewRegisterOperand(AssemblyAST.R10)
-			for _, inst := range v.Instructions {
+			for _, inst := range d.Instructions {
 				switch v := inst.(type) {
 				case *AssemblyAST.InstructionMove:
-					if _, ok := v.Source.(*AssemblyAST.Stack); ok {
-						if _, ok2 := v.Destination.(*AssemblyAST.Stack); ok2 {
-							newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Source, R10))
-							v.Source = R10
-						}
+					isSourceOnStack := v.Source.IsStackAllocated()
+					isDestinationOnStack := v.Destination.IsStackAllocated()
+
+					if isSourceOnStack && isDestinationOnStack {
+						newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Source, R10))
+						v.Source = R10
 					}
 				case *AssemblyAST.InstructionBinary:
 					if v.Operator == "*" {
@@ -334,7 +337,7 @@ func ReplaceInvalidInstructions(program AssemblyAST.Program) AssemblyAST.Program
 				newInstructions = append(newInstructions, inst)
 			}
 
-			v.Instructions = newInstructions
+			d.Instructions = newInstructions
 		}
 	}
 
