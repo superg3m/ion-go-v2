@@ -136,7 +136,7 @@ func (r *Stack) ToString() string {
 func (*Parameter) isOperand() {}
 func (p *Parameter) ToString() string {
 	if p.Register == INVALID {
-		return fmt.Sprintf("-%d(%%rbp)", p.StackOffset)
+		return fmt.Sprintf("%d(%%rbp)", p.StackOffset)
 	}
 
 	return p.Register.ToString()
