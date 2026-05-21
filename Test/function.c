@@ -1,16 +1,16 @@
-int get_integer(int x, int z);
+int get_integer(int a, int b, int c, int d, int e, int f, int g, int h);
 
 // EXPECT: 1
 int main() {
     int x = 1;
     int y = 5;
-    x = get_integer(10, 5);
+    x = get_integer(3, 10, 1, 2, 3, 4, 5, 6);
     y = x++;
 
-    return x == 20 && y == 19;
+    return x == 12 && y == 11;
 }
 
 
-int get_integer(int x, int z) {
-    return x + z + 4;
+int get_integer(int a, int b, int c, int d, int e, int f, int g, int h) {
+    return a + g + h;
 }

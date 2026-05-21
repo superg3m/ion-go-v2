@@ -138,7 +138,7 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 		for i, param := range activeParams {
 			if v.Tok.Lexeme == param.Tok.Lexeme {
 				if i >= len(AssemblyAST.ArgumentRegisters) {
-					offset := 8
+					offset := 16
 					offset += (i - len(AssemblyAST.ArgumentRegisters)) * 8
 
 					return instructions, &ParameterVariable{

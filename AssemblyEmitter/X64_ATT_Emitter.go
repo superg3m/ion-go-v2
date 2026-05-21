@@ -33,6 +33,8 @@ func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 		instructions = EmitFunctionEpilogue()
 	case *AssemblyAST.InstructionStackAllocate:
 		instructions = []string{fmt.Sprintf("\tsubq $%d, %%rsp", v.AllocationSize)}
+	case *AssemblyAST.InstructionDeallocateStack:
+		instructions = []string{fmt.Sprintf("\taddq $%d, %%rsp", v.Value)}
 	case *AssemblyAST.InstructionUnary:
 		switch v.Operator {
 		case "-":
@@ -83,7 +85,7 @@ func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 			}
 		}
 	case *AssemblyAST.InstructionStackPush:
-		instructions = []string{fmt.Sprintf("\tpushq %s:", v.Source.ToString())}
+		instructions = []string{fmt.Sprintf("\tpushq %s", v.Source.ToString())}
 	case *AssemblyAST.InstructionFunctionCall:
 		instructions = []string{fmt.Sprintf("\tcall %s", v.Identifier)}
 	case *AssemblyAST.InstructionLabel:

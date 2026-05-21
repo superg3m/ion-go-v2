@@ -128,7 +128,7 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 		}
 
 		if stackArgumentCount > 0 {
-			for i := len(AssemblyAST.ArgumentRegisters) + (stackArgumentCount - 1); i <= len(AssemblyAST.ArgumentRegisters); i -= 1 {
+			for i := len(AssemblyAST.ArgumentRegisters) + (stackArgumentCount - 1); i >= len(AssemblyAST.ArgumentRegisters); i -= 1 {
 				_, isVariable := v.Arguments[i].(*IR.Variable)
 				_, isConstant := v.Arguments[i].(*IR.Constant)
 				arg := newOperand(v.Arguments[i])
@@ -254,7 +254,8 @@ func ReplacePseudoRegisters(instructions []AssemblyAST.Instruction, table *Symbo
 			v.Right = replacePseudoOperand(table, v.Right)
 		case *AssemblyAST.InstructionReturn, *AssemblyAST.InstructionCDQ,
 			*AssemblyAST.InstructionConditionalJump, *AssemblyAST.InstructionLabel,
-			*AssemblyAST.InstructionJump, *AssemblyAST.InstructionFunctionCall:
+			*AssemblyAST.InstructionJump, *AssemblyAST.InstructionFunctionCall,
+			*AssemblyAST.InstructionDeallocateStack, *AssemblyAST.InstructionStackPush:
 		default:
 			panic(fmt.Sprintf("Unknown instruction %T", v))
 		}
@@ -314,7 +315,8 @@ func ReplaceInvalidInstructions(program AssemblyAST.Program) AssemblyAST.Program
 					*AssemblyAST.InstructionStackAllocate, *AssemblyAST.InstructionUnary,
 					*AssemblyAST.InstructionConditionalJump, *AssemblyAST.InstructionLabel,
 					*AssemblyAST.InstructionJump, *AssemblyAST.InstructionSetConditionalCode,
-					*AssemblyAST.InstructionFunctionCall:
+					*AssemblyAST.InstructionFunctionCall, *AssemblyAST.InstructionDeallocateStack,
+					*AssemblyAST.InstructionStackPush:
 				default:
 					panic(fmt.Sprintf("Unknown instruction %T", v))
 				}
