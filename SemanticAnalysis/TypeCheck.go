@@ -29,7 +29,7 @@ func typeCheckFunctionCall(v *AST.ExpressionFunctionCall, env *TypeEnv) TS.Type 
 	paramCount := len(functionType.Params)
 
 	if paramCount != argCount {
-		panic(fmt.Sprintf("expected %d parameter(s), got %d", argCount, paramCount))
+		panic(fmt.Sprintf("expected %d arg(s), got %d | Line: %d", paramCount, argCount, v.Tok.Line))
 	}
 
 	for i := 0; i < argCount; i++ {
@@ -393,14 +393,17 @@ func typeCheckDeclaration(decl AST.Declaration, env *TypeEnv) {
 		}
 
 		globalFunctions[v.Tok.Lexeme] = &AST.DeclarationFunction{
-			v.DeclType,
-			v.Tok,
-			nil,
+			DeclType: v.DeclType,
+			Tok:      v.Tok,
+			Block:    nil,
 		}
 	case *AST.DeclarationFunction:
 		functionType := v.DeclType.(*TS.FunctionType)
 
 		if out, ok := globalFunctions[v.Tok.Lexeme]; ok && out.Block == nil {
+			if equal, err := TS.TypeStrictCompare(out.DeclType, functionType); !equal {
+				panic(fmt.Sprintf("Line %d | %s() has prototype definition: %s, but found definition: %s | Err: %s", v.Tok.Line, v.Tok.Lexeme, out.DeclType.String(), functionType.String(), err.Error()))
+			}
 			out.Block = v.Block
 		} else if ok {
 			panic("Attempting to redeclare function " + v.Tok.Lexeme)

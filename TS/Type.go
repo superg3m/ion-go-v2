@@ -488,7 +488,7 @@ func TypeStructuralEquivalence(t1 Type, t2 Type) bool {
 			p1 := v1.Params[i]
 			p2 := v2.Params[i]
 
-			if TypeStructuralEquivalence(p1.DeclType, p2.DeclType) {
+			if !TypeStructuralEquivalence(p1.DeclType, p2.DeclType) {
 				return false
 			}
 		}
@@ -566,11 +566,11 @@ func TypeStrictCompare(t1 Type, t2 Type) (bool, error) {
 		return TypeStructuralEquivalence(t1, t2), fmt.Errorf("'%s' and '%s' and not structurally equivalent", t1.String(), t2.String())
 	}
 
-	if !TypeStructuralEquivalence(t1.Underlying(), t2.Underlying()) {
+	if !TypeStructuralEquivalence(t1, t2) {
 		return false, fmt.Errorf("'%s' and '%s' and not structurally equivalent", t1.String(), t2.String())
 	}
 
-	if !TypeStrictNameEquivalence(t1.Underlying(), t2.Underlying()) {
+	if !TypeStrictNameEquivalence(t1, t2) {
 		return false, fmt.Errorf("'%s' and '%s' and not strictly name equivalent", t1.String(), t2.String())
 	}
 

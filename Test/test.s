@@ -6,7 +6,8 @@ main:
 	subq $32, %rsp
 	movl $1, -4(%rbp)
 	movl $5, -8(%rbp)
-	movl $5, %edi
+	movl $10, %edi
+	movl $5, %esi
 	call get_integer
 	movl %eax, -8(%rbp)
 	movl -8(%rbp), %r10d
@@ -19,14 +20,14 @@ main:
 	movl -12(%rbp), %r10d
 	movl %r10d, -8(%rbp)
 	movl -4(%rbp), %r10d
-	cmpl $10, %r10d
+	cmpl $20, %r10d
 	movl $0, -16(%rbp)
 	sete -16(%rbp)
 	movl -16(%rbp), %r10d
 	cmpl $0, %r10d
 	je .L1
 	movl -8(%rbp), %r10d
-	cmpl $9, %r10d
+	cmpl $19, %r10d
 	movl $0, -20(%rbp)
 	sete -20(%rbp)
 .L2:
@@ -48,8 +49,11 @@ get_integer:
 	movq %rsp, %rbp
 	subq $16, %rsp
 	movl %edi, -4(%rbp)
-	addl $4, -4(%rbp)
-	movl -4(%rbp), %eax
+	addl %esi, -4(%rbp)
+	movl -4(%rbp), %r10d
+	movl %r10d, -8(%rbp)
+	addl $4, -8(%rbp)
+	movl -8(%rbp), %eax
 	movq %rbp, %rsp
 	popq %rbp
 	ret
