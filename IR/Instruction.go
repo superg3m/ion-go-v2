@@ -1,5 +1,7 @@
 package IR
 
+import "ion/go/v2/Token"
+
 type Instruction interface {
 	isInstruction()
 }
@@ -39,6 +41,12 @@ type ConditionalJump struct {
 
 type Label struct {
 	Identifier string
+}
+
+type FunctionCall struct {
+	Identifier  Token.Token
+	Arguments   []Value
+	Destination Value
 }
 
 func NewReturnInstruction(value Value) Instruction {
@@ -92,6 +100,14 @@ func NewLabelInstruction(identifier string) Instruction {
 	}
 }
 
+func NewFunctionCallInstruction(identifier Token.Token, arguments []Value, destination Value) Instruction {
+	return &FunctionCall{
+		Identifier:  identifier,
+		Arguments:   arguments,
+		Destination: destination,
+	}
+}
+
 func (*Return) isInstruction()          {}
 func (*Unary) isInstruction()           {}
 func (*Binary) isInstruction()          {}
@@ -99,3 +115,4 @@ func (*Copy) isInstruction()            {}
 func (*Jump) isInstruction()            {}
 func (*ConditionalJump) isInstruction() {}
 func (*Label) isInstruction()           {}
+func (*FunctionCall) isInstruction()    {}

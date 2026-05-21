@@ -62,8 +62,9 @@ type ExpressionCompoundAssignment struct {
 }
 
 type ExpressionFunctionCall struct {
+	DeclType  TS.Type
 	Tok       Token.Token
-	arguments []Expression
+	Arguments []Expression
 }
 
 type ExpressionPost struct {
@@ -146,4 +147,10 @@ func (*ExpressionPre) isNode()       {}
 func (*ExpressionPre) isExpression() {}
 func (a *ExpressionPre) GetDeclType() TS.Type {
 	return a.Operand.GetDeclType()
+}
+
+func (*ExpressionFunctionCall) isNode()       {}
+func (*ExpressionFunctionCall) isExpression() {}
+func (f *ExpressionFunctionCall) GetDeclType() TS.Type {
+	return f.DeclType
 }

@@ -83,6 +83,18 @@ type InstructionLabel struct {
 	Identifier string
 }
 
+type InstructionStackPush struct {
+	Source Operand
+}
+
+type InstructionDeallocateStack struct {
+	Value int
+}
+
+type InstructionFunctionCall struct {
+	Identifier string
+}
+
 func NewMoveInstruction(source Operand, destination Operand) Instruction {
 	return &InstructionMove{
 		Destination: destination,
@@ -152,6 +164,24 @@ func NewCDQInstruction() Instruction {
 	return &InstructionCDQ{}
 }
 
+func NewStackPushInstruction(source Operand) Instruction {
+	return &InstructionStackPush{
+		Source: source,
+	}
+}
+
+func NewDeallocateStackInstruction(value int) Instruction {
+	return &InstructionDeallocateStack{
+		Value: value,
+	}
+}
+
+func NewFunctionCallInstruction(identifier string) Instruction {
+	return &InstructionFunctionCall{
+		identifier,
+	}
+}
+
 func NewDivideInstruction(left Operand) Instruction {
 	return &InstructionDivide{
 		left,
@@ -171,3 +201,7 @@ func (*InstructionJump) isInstruction()               {}
 func (*InstructionConditionalJump) isInstruction()    {}
 func (*InstructionSetConditionalCode) isInstruction() {}
 func (*InstructionLabel) isInstruction()              {}
+
+func (*InstructionStackPush) isInstruction()       {}
+func (*InstructionDeallocateStack) isInstruction() {}
+func (*InstructionFunctionCall) isInstruction()    {}

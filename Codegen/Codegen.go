@@ -22,6 +22,7 @@ func newOperand(value IR.Value) AssemblyAST.Operand {
 }
 
 func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
+	rax := AssemblyAST.NewRegisterOperand(AssemblyAST.RAX)
 	zeroOperand := AssemblyAST.NewImmediateOperand(0)
 	// oneOperand := AssemblyAST.NewImmediateOperand(1)
 
@@ -29,7 +30,7 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 	switch v := inst.(type) {
 
 	case *IR.Return:
-		instructions = append(instructions, AssemblyAST.NewMoveInstruction(newOperand(v.Value), AssemblyAST.NewRegisterOperand(AssemblyAST.RAX)))
+		instructions = append(instructions, AssemblyAST.NewMoveInstruction(newOperand(v.Value), rax))
 		instructions = append(instructions, AssemblyAST.NewReturnInstruction())
 	case *IR.Unary:
 		destination := newOperand(v.Destination)
@@ -50,14 +51,14 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 		right := newOperand(v.Right)
 
 		if v.Operator == "/" {
-			instructions = append(instructions, AssemblyAST.NewMoveInstruction(left, AssemblyAST.NewRegisterOperand(AssemblyAST.RAX)))
+			instructions = append(instructions, AssemblyAST.NewMoveInstruction(left, rax))
 			instructions = append(instructions, AssemblyAST.NewCDQInstruction())
 			instructions = append(instructions, AssemblyAST.NewDivideInstruction(right))
-			instructions = append(instructions, AssemblyAST.NewMoveInstruction(AssemblyAST.NewRegisterOperand(AssemblyAST.RAX), destination))
+			instructions = append(instructions, AssemblyAST.NewMoveInstruction(rax, destination))
 
 			break
 		} else if v.Operator == "%" {
-			instructions = append(instructions, AssemblyAST.NewMoveInstruction(left, AssemblyAST.NewRegisterOperand(AssemblyAST.RAX)))
+			instructions = append(instructions, AssemblyAST.NewMoveInstruction(left, rax))
 			instructions = append(instructions, AssemblyAST.NewCDQInstruction())
 			instructions = append(instructions, AssemblyAST.NewDivideInstruction(right))
 			instructions = append(instructions, AssemblyAST.NewMoveInstruction(AssemblyAST.NewRegisterOperand(AssemblyAST.RDX), destination))
@@ -92,11 +93,81 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 		condition := newOperand(v.Condition)
 		instructions = append(instructions, AssemblyAST.NewCompareInstruction(condition, zeroOperand))
 		instructions = append(instructions, AssemblyAST.NewConditionalJumpInstruction(v.TargetLabel, code))
+	case *IR.FunctionCall:
+		argumentRegisters := []AssemblyAST.Register{
+			AssemblyAST.RDI, AssemblyAST.RSI,
+			AssemblyAST.RDX, AssemblyAST.RCX,
+			AssemblyAST.R8, AssemblyAST.R9,
+		}
+
+		// NOTE(Jovanni): negative if there are less arguments than the actual argument registers
+		stackArgumentCount := max(0, len(v.Arguments)-len(argumentRegisters))
+
+		var stackPadding int
+		if stackArgumentCount%2 == 1 {
+			stackPadding = 8
+		} else {
+			stackPadding = 0
+		}
+
+		if stackPadding != 0 {
+			instructions = append(instructions, AssemblyAST.NewStackAllocateInstruction(stackPadding))
+		}
+
+		for i, arg := range v.Arguments {
+			if i >= len(argumentRegisters) {
+				break
+			}
+
+			source := newOperand(arg)
+			if i < len(argumentRegisters) {
+				register := AssemblyAST.NewRegisterOperand(argumentRegisters[i])
+				instructions = append(instructions, AssemblyAST.NewMoveInstruction(source, register))
+			}
+		}
+
+		if stackArgumentCount > 0 {
+			for i := len(argumentRegisters) + (stackArgumentCount - 1); i <= len(argumentRegisters); i -= 1 {
+				_, isVariable := v.Arguments[i].(*IR.Variable)
+				_, isConstant := v.Arguments[i].(*IR.Constant)
+				arg := newOperand(v.Arguments[i])
+				if isVariable || isConstant {
+					instructions = append(instructions, AssemblyAST.NewStackPushInstruction(arg))
+				} else {
+					panic(fmt.Sprintf("register not found in argument registers"))
+					// emit(Mov(assembly_arg, Reg(AX)))
+					//emit(Push(Reg(AX)))
+				}
+			}
+		}
+
+		instructions = append(instructions, AssemblyAST.NewFunctionCallInstruction(v.Identifier.Lexeme))
+
+		bytesToRemove := 8*stackArgumentCount + stackPadding
+		if bytesToRemove != 0 {
+			instructions = append(instructions, AssemblyAST.NewDeallocateStackInstruction(bytesToRemove))
+		}
+
+		destination := newOperand(v.Destination)
+		if destination != nil {
+			instructions = append(instructions, AssemblyAST.NewMoveInstruction(rax, destination))
+		}
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}
 
 	return instructions
+}
+
+func getNext16ByteAligned(totalAllocationSize int) int {
+	alignment := 16
+
+	// NOTE(Jovanni): Because alignment is a power of two I can do this
+	if (totalAllocationSize & (alignment - 1)) != 0 {
+		totalAllocationSize += alignment - (totalAllocationSize & (alignment - 1))
+	}
+
+	return totalAllocationSize
 }
 
 func assemblyDefinitionFromIRDefinition(definition IR.Definition, globalSymbolTable *Symbol.SymbolTable) AssemblyAST.Definition {
@@ -110,13 +181,13 @@ func assemblyDefinitionFromIRDefinition(definition IR.Definition, globalSymbolTa
 
 		table := Symbol.CreateSymbolTable(globalSymbolTable)
 		instructions = ReplacePseudoRegisters(instructions, &table)
+		table.StackOffset = getNext16ByteAligned(table.StackOffset)
 		instructions = slices.Insert(instructions, 0, AssemblyAST.NewStackAllocateInstruction(table.StackOffset))
 		return &AssemblyAST.FunctionDefinition{
 			DeclType:     v.DeclType,
 			Tok:          v.Tok,
 			Instructions: instructions,
 		}
-
 	case *IR.VariableDefinition:
 		// TODO(Jovanni): THIS IS NOT RIGHT BECAUSE IT NEEDS TO BE A GLOBAL ADDRESS NOT STACK
 		for _, inst := range v.Instructions {
@@ -182,7 +253,7 @@ func ReplacePseudoRegisters(instructions []AssemblyAST.Instruction, table *Symbo
 			v.Right = replacePseudoOperand(table, v.Right)
 		case *AssemblyAST.InstructionReturn, *AssemblyAST.InstructionCDQ,
 			*AssemblyAST.InstructionConditionalJump, *AssemblyAST.InstructionLabel,
-			*AssemblyAST.InstructionJump:
+			*AssemblyAST.InstructionJump, *AssemblyAST.InstructionFunctionCall:
 		default:
 			panic(fmt.Sprintf("Unknown instruction %T", v))
 		}
@@ -241,7 +312,8 @@ func ReplaceInvalidInstructions(program AssemblyAST.Program) AssemblyAST.Program
 				case *AssemblyAST.InstructionReturn, *AssemblyAST.InstructionCDQ,
 					*AssemblyAST.InstructionStackAllocate, *AssemblyAST.InstructionUnary,
 					*AssemblyAST.InstructionConditionalJump, *AssemblyAST.InstructionLabel,
-					*AssemblyAST.InstructionJump, *AssemblyAST.InstructionSetConditionalCode:
+					*AssemblyAST.InstructionJump, *AssemblyAST.InstructionSetConditionalCode,
+					*AssemblyAST.InstructionFunctionCall:
 				default:
 					panic(fmt.Sprintf("Unknown instruction %T", v))
 				}

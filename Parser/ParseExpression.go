@@ -19,6 +19,23 @@ func (parser *Parser) parseLValue() AST.Expression {
 	return nil
 }
 
+func (parser *Parser) parseArguments() []AST.Expression {
+	var ret []AST.Expression
+
+	parser.expect(Token.LEFT_PAREN)
+	for !parser.consumeOnMatch(Token.RIGHT_PAREN) {
+		expression := parser.parseExpression()
+
+		ret = append(ret, expression)
+
+		if parser.peekNthToken(0).Kind != Token.RIGHT_PAREN {
+			parser.expect(Token.COMMA)
+		}
+	}
+
+	return ret
+}
+
 // <Primary>    ::= <integer> | <float> | <boolean> | <string> | '(' <Expression> ')'
 func (parser *Parser) parsePrimary() AST.Expression {
 	current := parser.peekNthToken(0)
@@ -50,28 +67,38 @@ func (parser *Parser) parsePrimary() AST.Expression {
 			Operator: operator,
 			Operand:  operand,
 		}
-	} else if current.Kind == Token.IDENTIFIER && next.Kind == Token.EQUALS {
-		lhs := parser.parseLValue()
-		parser.expect(Token.EQUALS)
-		rhs := parser.parseExpression()
-
-		return &AST.ExpressionAssignment{
-			LHSIdentifierToken: current,
-			LHS:                lhs,
-			RHS:                rhs,
-		}
-	} else if current.Kind == Token.IDENTIFIER && Token.BinaryOperationFromCompoundAssignment(next.Lexeme) != "" {
-		lhs := parser.parseLValue()
-		operator := parser.consumeNextToken()
-		rhs := parser.parseExpression()
-
-		return &AST.ExpressionCompoundAssignment{
-			LHSIdentifierToken: current,
-			Operator:           operator,
-			LHS:                lhs,
-			RHS:                rhs,
-		}
 	} else if current.Kind == Token.IDENTIFIER {
+		if next.Kind == Token.EQUALS {
+			lhs := parser.parseLValue()
+			parser.expect(Token.EQUALS)
+			rhs := parser.parseExpression()
+
+			return &AST.ExpressionAssignment{
+				LHSIdentifierToken: current,
+				LHS:                lhs,
+				RHS:                rhs,
+			}
+		} else if Token.BinaryOperationFromCompoundAssignment(next.Lexeme) != "" {
+			lhs := parser.parseLValue()
+			operator := parser.consumeNextToken()
+			rhs := parser.parseExpression()
+
+			return &AST.ExpressionCompoundAssignment{
+				LHSIdentifierToken: current,
+				Operator:           operator,
+				LHS:                lhs,
+				RHS:                rhs,
+			}
+		} else if next.Kind == Token.LEFT_PAREN {
+			parser.expect(Token.IDENTIFIER)
+			arguments := parser.parseArguments()
+			return &AST.ExpressionFunctionCall{
+				DeclType:  nil,
+				Tok:       current,
+				Arguments: arguments,
+			}
+		}
+
 		return parser.parseLValue()
 	} else if parser.consumeOnMatch(Token.LEFT_PAREN) {
 		expr := parser.parseExpression()

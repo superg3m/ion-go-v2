@@ -10,13 +10,22 @@ func (parser *Parser) parseFunctionDeclaration() AST.Declaration {
 	returnType := parser.parseType()
 	ident := parser.expect(Token.IDENTIFIER)
 	params := parser.parseParameters()
-	block := parser.parseStatementBlock().(*AST.StatementBlock)
 
 	declType := TS.NewTypeFunction(returnType, params)
-	return &AST.DeclarationFunction{
+	if parser.peekNthToken(0).Kind == Token.LEFT_CURLY {
+		block := parser.parseStatementBlock().(*AST.StatementBlock)
+
+		return &AST.DeclarationFunction{
+			DeclType: declType,
+			Tok:      ident,
+			Block:    block,
+		}
+	}
+
+	parser.expect(Token.SEMI_COLON)
+	return &AST.DeclarationFunctionPrototype{
 		DeclType: declType,
 		Tok:      ident,
-		Block:    block,
 	}
 }
 

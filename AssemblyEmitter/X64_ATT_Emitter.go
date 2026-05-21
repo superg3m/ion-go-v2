@@ -82,6 +82,10 @@ func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 				fmt.Sprintf("\tset%s %s", v.Code.ToString(), t.X8BitName()),
 			}
 		}
+	case *AssemblyAST.InstructionStackPush:
+		instructions = []string{fmt.Sprintf("\tpushq %s:", v.Source.ToString())}
+	case *AssemblyAST.InstructionFunctionCall:
+		instructions = []string{fmt.Sprintf("\tcall %s", v.Identifier)}
 	case *AssemblyAST.InstructionLabel:
 		instructions = []string{fmt.Sprintf(".L%s:", v.Identifier)}
 	default:

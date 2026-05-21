@@ -17,13 +17,13 @@ var globalFunctions map[string]*AST.DeclarationFunction
 // var globalStruct map[string]*AST.DeclarationStruct
 var globalReturnStatementStack []StatementTypePair
 
-/*
-func typeCheckFunctionCall(v *AST.SE_FunctionCall, env *TypeEnv) TS.Type {
+func typeCheckFunctionCall(v *AST.ExpressionFunctionCall, env *TypeEnv) TS.Type {
 	functionDeclaration, ok := globalFunctions[v.Tok.Lexeme]
 	if !ok {
 		panic("undefined function " + v.Tok.Lexeme)
 	}
 
+	v.DeclType = functionDeclaration.DeclType
 	functionType := functionDeclaration.DeclType.(*TS.FunctionType)
 	argCount := len(v.Arguments)
 	paramCount := len(functionType.Params)
@@ -44,7 +44,6 @@ func typeCheckFunctionCall(v *AST.SE_FunctionCall, env *TypeEnv) TS.Type {
 
 	return functionType.ReturnType
 }
-*/
 
 func validConditionResolution(condition TS.Type) bool {
 	_, booleanResolution := condition.(*TS.BoolType)
@@ -144,6 +143,8 @@ func typeCheckExpression(e AST.Expression, env *TypeEnv) TS.Type {
 		return typeCheckExpression(v.Operand, env)
 	case *AST.ExpressionPost:
 		return typeCheckExpression(v.Operand, env)
+	case *AST.ExpressionFunctionCall:
+		return typeCheckFunctionCall(v, env)
 
 	/*
 		case *AST.ExpressionTypeCast:
@@ -385,15 +386,27 @@ func typeCheckDeclaration(decl AST.Declaration, env *TypeEnv) {
 				panic(fmt.Sprintf("Line: %d | Can't assign type %s to type %s | %s", v.Tok.Line, rhsType.String(), v.DeclType.String(), err.Error()))
 			}
 		}
+
+	case *AST.DeclarationFunctionPrototype:
+		if _, ok := globalFunctions[v.Tok.Lexeme]; ok {
+			panic("Attempting to redeclare function " + v.Tok.Lexeme)
+		}
+
+		globalFunctions[v.Tok.Lexeme] = &AST.DeclarationFunction{
+			v.DeclType,
+			v.Tok,
+			nil,
+		}
 	case *AST.DeclarationFunction:
 		functionType := v.DeclType.(*TS.FunctionType)
 
-		if _, ok := globalFunctions[v.Tok.Lexeme]; ok {
+		if out, ok := globalFunctions[v.Tok.Lexeme]; ok && out.Block == nil {
+			out.Block = v.Block
+		} else if ok {
 			panic("Attempting to redeclare function " + v.Tok.Lexeme)
-		} else {
-			globalFunctions[v.Tok.Lexeme] = v
 		}
 
+		globalFunctions[v.Tok.Lexeme] = v
 		funcEnv := NewTypeEnv(env)
 		for _, param := range functionType.Params {
 			funcEnv.set(param.Tok, &AST.DeclarationVariable{

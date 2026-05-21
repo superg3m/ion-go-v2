@@ -10,6 +10,11 @@ type Declaration interface {
 	isDeclaration()
 }
 
+type DeclarationFunctionPrototype struct {
+	DeclType TS.Type
+	Tok      Token.Token
+}
+
 type DeclarationFunction struct {
 	DeclType TS.Type
 	Tok      Token.Token
@@ -21,6 +26,9 @@ type DeclarationVariable struct {
 	Tok      Token.Token
 	RHS      Expression
 }
+
+func (*DeclarationFunctionPrototype) isNode()        {}
+func (*DeclarationFunctionPrototype) isDeclaration() {}
 
 func (*DeclarationFunction) isNode()        {}
 func (*DeclarationFunction) isDeclaration() {}

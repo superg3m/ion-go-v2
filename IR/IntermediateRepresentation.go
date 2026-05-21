@@ -160,14 +160,15 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 	case *AST.ExpressionPost:
 		var operand Value
 		instructions, operand = emitFromExpression(v.Operand, instructions)
-		destination := NewVariable(Unique.TempVariableToken(v.Operator), operand.GetDeclType())
+		result := NewVariable(Unique.TempVariableToken(v.Operator), operand.GetDeclType())
+		instructions = append(instructions, NewCopyInstruction(operand, result))
 		if v.Operator.Lexeme == "++" {
-			instructions = append(instructions, NewBinaryInstruction("+", operand, NewConstantValue(1, v.Operator), destination))
+			instructions = append(instructions, NewBinaryInstruction("+", operand, NewConstantValue(1, v.Operator), operand.(*Variable)))
 		} else if v.Operator.Lexeme == "--" {
-			instructions = append(instructions, NewBinaryInstruction("-", operand, NewConstantValue(1, v.Operator), destination))
+			instructions = append(instructions, NewBinaryInstruction("-", operand, NewConstantValue(1, v.Operator), operand.(*Variable)))
 		}
 
-		return instructions, operand
+		return instructions, result
 	case *AST.ExpressionPre:
 		var operand Value
 		instructions, operand = emitFromExpression(v.Operand, instructions)
@@ -178,6 +179,21 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 			instructions = append(instructions, NewBinaryInstruction("-", operand, NewConstantValue(1, v.Operator), destination))
 		}
 
+		return instructions, destination
+	case *AST.ExpressionFunctionCall:
+		arguments := make([]Value, len(v.Arguments))
+		for i, arg := range v.Arguments {
+			var value Value
+			instructions, value = emitFromExpression(arg, instructions)
+			arguments[i] = value
+		}
+		var destination Value = nil
+		_, isVoidReturn := v.DeclType.(*TS.FunctionType).ReturnType.(*TS.VoidType)
+		if !isVoidReturn {
+			destination = NewVariable(Unique.TempVariableToken(v.Tok), v.GetDeclType())
+		}
+
+		instructions = append(instructions, NewFunctionCallInstruction(v.Tok, arguments, destination))
 		return instructions, destination
 	case *AST.ExpressionBinary:
 		var left, right Value
@@ -272,6 +288,8 @@ func emitDefinitionFromDeclaration(decl AST.Declaration) Definition {
 			Tok:          v.Tok,
 			Instructions: instructions,
 		}
+	case *AST.DeclarationFunctionPrototype:
+
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", v))
 	}
