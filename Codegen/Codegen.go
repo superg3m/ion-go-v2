@@ -29,17 +29,19 @@ func newOperand(value IR.Value) AssemblyAST.Operand {
 }
 
 func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
-	rax := AssemblyAST.NewRegisterOperand(AssemblyAST.RAX)
-	zeroOperand := AssemblyAST.NewImmediateOperand(0)
 	// oneOperand := AssemblyAST.NewImmediateOperand(1)
 
 	var instructions []AssemblyAST.Instruction
 	switch v := inst.(type) {
 
 	case *IR.Return:
+		rax := AssemblyAST.NewRegisterOperand(AssemblyAST.RAX, v.Value.GetDeclType())
+
 		instructions = append(instructions, AssemblyAST.NewMoveInstruction(newOperand(v.Value), rax))
 		instructions = append(instructions, AssemblyAST.NewReturnInstruction())
 	case *IR.Unary:
+		zeroOperand := AssemblyAST.NewImmediateOperand(0, v.Destination.GetDeclType())
+
 		destination := newOperand(v.Destination)
 		source := newOperand(v.Source)
 		if v.Operator == "!" {
@@ -53,6 +55,9 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 		instructions = append(instructions, AssemblyAST.NewMoveInstruction(source, destination))
 		instructions = append(instructions, AssemblyAST.NewUnaryInstruction(v.Operator, destination))
 	case *IR.Binary:
+		zeroOperand := AssemblyAST.NewImmediateOperand(0, v.Destination.GetDeclType())
+		rax := AssemblyAST.NewRegisterOperand(AssemblyAST.RAX, v.Destination.GetDeclType())
+
 		destination := newOperand(v.Destination)
 		left := newOperand(v.Left)
 		right := newOperand(v.Right)
@@ -68,7 +73,7 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 			instructions = append(instructions, AssemblyAST.NewMoveInstruction(left, rax))
 			instructions = append(instructions, AssemblyAST.NewCDQInstruction())
 			instructions = append(instructions, AssemblyAST.NewDivideInstruction(right))
-			instructions = append(instructions, AssemblyAST.NewMoveInstruction(AssemblyAST.NewRegisterOperand(AssemblyAST.RDX), destination))
+			instructions = append(instructions, AssemblyAST.NewMoveInstruction(AssemblyAST.NewRegisterOperand(AssemblyAST.RDX, v.Destination.DeclType), destination))
 
 			break
 		} else if v.Operator == ">" || v.Operator == "<" || v.Operator == "<=" || v.Operator == ">=" || v.Operator == "==" || v.Operator == "!=" {
@@ -90,6 +95,8 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 		right := newOperand(v.Destination)
 		instructions = append(instructions, AssemblyAST.NewMoveInstruction(left, right))
 	case *IR.ConditionalJump:
+		zeroOperand := AssemblyAST.NewImmediateOperand(0, v.Condition.GetDeclType())
+
 		code := AssemblyAST.EQUALS
 		if v.IfZero {
 			code = AssemblyAST.EQUALS
@@ -122,7 +129,7 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 
 			source := newOperand(arg)
 			if i < len(AssemblyAST.ArgumentRegisters) {
-				register := AssemblyAST.NewRegisterOperand(AssemblyAST.ArgumentRegisters[i])
+				register := AssemblyAST.NewRegisterOperand(AssemblyAST.ArgumentRegisters[i], v.Destination.GetDeclType())
 				instructions = append(instructions, AssemblyAST.NewStackPushInstruction(register))
 				instructions = append(instructions, AssemblyAST.NewMoveInstruction(source, register))
 			}
@@ -149,7 +156,7 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 			}
 
 			if i < len(AssemblyAST.ArgumentRegisters) {
-				register := AssemblyAST.NewRegisterOperand(AssemblyAST.ArgumentRegisters[i])
+				register := AssemblyAST.NewRegisterOperand(AssemblyAST.ArgumentRegisters[i], v.Destination.GetDeclType())
 				instructions = append(instructions, AssemblyAST.NewStackPop(register))
 			}
 		}
@@ -159,6 +166,7 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 			instructions = append(instructions, AssemblyAST.NewDeallocateStackInstruction(bytesToRemove))
 		}
 
+		rax := AssemblyAST.NewRegisterOperand(AssemblyAST.RAX, v.Destination.GetDeclType())
 		destination := newOperand(v.Destination)
 		if destination != nil {
 			instructions = append(instructions, AssemblyAST.NewMoveInstruction(rax, destination))
@@ -240,11 +248,11 @@ func replacePseudoOperand(table *Symbol.SymbolTable, operand AssemblyAST.Operand
 	case *AssemblyAST.Pseudo:
 		if table.Has(v.Tok) {
 			offset := table.GetOffset(v.Tok)
-			operand = AssemblyAST.NewStackOperand(offset)
+			operand = AssemblyAST.NewStackOperand(offset, v.DeclType)
 		} else {
 			table.StackOffset -= v.DeclType.Size()
 			table.Set(v.Tok, Symbol.CreateSymbol(v.Tok, v.DeclType), table.StackOffset)
-			operand = AssemblyAST.NewStackOperand(table.StackOffset)
+			operand = AssemblyAST.NewStackOperand(table.StackOffset, v.DeclType)
 		}
 	}
 
@@ -289,18 +297,20 @@ func ReplaceInvalidInstructions(program AssemblyAST.Program) AssemblyAST.Program
 		switch d := def.(type) {
 		case *AssemblyAST.FunctionDefinition:
 			newInstructions := make([]AssemblyAST.Instruction, 0, len(d.Instructions)*2)
-			R10 := AssemblyAST.NewRegisterOperand(AssemblyAST.R10)
+
 			for _, inst := range d.Instructions {
 				switch v := inst.(type) {
 				case *AssemblyAST.InstructionMove:
 					isSourceOnStack := v.Source.IsStackAllocated()
 					isDestinationOnStack := v.Destination.IsStackAllocated()
 
+					R10 := AssemblyAST.NewRegisterOperand(AssemblyAST.R10, v.Destination.GetDeclType())
 					if isSourceOnStack && isDestinationOnStack {
 						newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Source, R10))
 						v.Source = R10
 					}
 				case *AssemblyAST.InstructionBinary:
+					R10 := AssemblyAST.NewRegisterOperand(AssemblyAST.R10, v.Left.GetDeclType())
 					if v.Operator == "*" {
 						if _, ok2 := v.Left.(*AssemblyAST.Register); !ok2 {
 							previousDestination := v.Left
@@ -325,11 +335,13 @@ func ReplaceInvalidInstructions(program AssemblyAST.Program) AssemblyAST.Program
 						}
 					}
 				case *AssemblyAST.InstructionDivide:
+					R10 := AssemblyAST.NewRegisterOperand(AssemblyAST.R10, v.Left.GetDeclType())
 					if _, ok := v.Left.(*AssemblyAST.Register); !ok {
 						newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10))
 						v.Left = R10
 					}
 				case *AssemblyAST.InstructionCompare:
+					R10 := AssemblyAST.NewRegisterOperand(AssemblyAST.R10, v.Left.GetDeclType())
 					if _, ok := v.Left.(*AssemblyAST.Register); !ok {
 						newInstructions = append(newInstructions, AssemblyAST.NewMoveInstruction(v.Left, R10))
 						v.Left = R10

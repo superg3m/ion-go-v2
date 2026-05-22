@@ -147,13 +147,12 @@ func emitFromExpression(expr AST.Expression, instructions []Instruction) ([]Inst
 
 					return instructions, &ParameterVariable{
 						Tok:         v.Tok,
-						Register:    AssemblyAST.INVALID,
 						StackOffset: offset,
 						DeclType:    v.DeclType,
 					}
 				}
 
-				register := AssemblyAST.ArgumentRegisters[i]
+				register := AssemblyAST.NewRegisterOperand(AssemblyAST.ArgumentRegisters[i], v.DeclType).(*AssemblyAST.Register)
 				return instructions, &ParameterVariable{
 					Tok:         v.Tok,
 					Register:    register,

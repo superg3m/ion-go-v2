@@ -24,8 +24,8 @@ type Variable struct {
 
 type ParameterVariable struct {
 	Tok         Token.Token
-	Register    AssemblyAST.Register // either this or the StackOffset is used
-	StackOffset int                  // either this or the Register is used
+	Register    *AssemblyAST.Register // either this or the StackOffset is used
+	StackOffset int                   // either this or the Register is used
 	DeclType    TS.Type
 }
 

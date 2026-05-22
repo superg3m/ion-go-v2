@@ -91,7 +91,7 @@ func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 		case *AssemblyAST.Register:
 			instructions = []string{fmt.Sprintf("\tpushq %s", t.X64BitName())}
 		case *AssemblyAST.Parameter:
-			if t.Register == AssemblyAST.INVALID {
+			if t.Register.Register == AssemblyAST.INVALID {
 				instructions = []string{fmt.Sprintf("\tpushq %s", t.Register.X64BitName())}
 			} else {
 				instructions = []string{fmt.Sprintf("\tpushq %s", t.Register.ToString())}
@@ -109,7 +109,7 @@ func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 		case *AssemblyAST.Register:
 			instructions = []string{fmt.Sprintf("\tpopq %s", t.X64BitName())}
 		case *AssemblyAST.Parameter:
-			if t.Register == AssemblyAST.INVALID {
+			if t.Register.Register == AssemblyAST.INVALID {
 				instructions = []string{fmt.Sprintf("\tpopq %s", t.Register.X64BitName())}
 			} else {
 				instructions = []string{fmt.Sprintf("\tpopq %s", t.Register.ToString())}
