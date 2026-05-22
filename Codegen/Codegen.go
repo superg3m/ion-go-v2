@@ -111,7 +111,9 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 			stackPadding = 0
 		}
 
-		instructions = append(instructions, AssemblyAST.NewStackAllocateInstruction(stackPadding))
+		if stackPadding != 0 {
+			instructions = append(instructions, AssemblyAST.NewStackAllocateInstruction(stackPadding))
+		}
 
 		for i, arg := range v.Arguments {
 			if i >= len(AssemblyAST.ArgumentRegisters) {
@@ -141,16 +143,6 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 
 		instructions = append(instructions, AssemblyAST.NewFunctionCallInstruction(v.Identifier.Lexeme))
 
-		bytesToRemove := 8*stackArgumentCount + stackPadding
-		if bytesToRemove != 0 {
-			instructions = append(instructions, AssemblyAST.NewDeallocateStackInstruction(bytesToRemove))
-		}
-
-		destination := newOperand(v.Destination)
-		if destination != nil {
-			instructions = append(instructions, AssemblyAST.NewMoveInstruction(rax, destination))
-		}
-
 		for i := len(AssemblyAST.ArgumentRegisters) - 1; i >= 0; i -= 1 {
 			if i >= len(v.Arguments) {
 				continue
@@ -160,6 +152,16 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 				register := AssemblyAST.NewRegisterOperand(AssemblyAST.ArgumentRegisters[i])
 				instructions = append(instructions, AssemblyAST.NewStackPop(register))
 			}
+		}
+
+		bytesToRemove := 8*stackArgumentCount + stackPadding
+		if bytesToRemove != 0 {
+			instructions = append(instructions, AssemblyAST.NewDeallocateStackInstruction(bytesToRemove))
+		}
+
+		destination := newOperand(v.Destination)
+		if destination != nil {
+			instructions = append(instructions, AssemblyAST.NewMoveInstruction(rax, destination))
 		}
 	default:
 		panic(fmt.Sprintf("Unknown instruction %T", v))

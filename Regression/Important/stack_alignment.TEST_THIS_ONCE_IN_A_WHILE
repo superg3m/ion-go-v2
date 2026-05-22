@@ -1,4 +1,11 @@
 // EXPECT: 3
+
+/*
+gcc -arch x86_64 test.s stack_alignment_check_osx.s -o main.exe
+./main.exe
+echo $?
+*/
+
 int even_arguments(int a, int b, int c, int d, int e, int f, int g, int h);
 int odd_arguments(int a, int b, int c, int d, int e, int f, int g, int h, int i);
 
