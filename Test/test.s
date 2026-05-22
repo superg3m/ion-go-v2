@@ -37,18 +37,22 @@ _fib:
 	movl -16(%rbp), %r10d
 	subl $1, %r10d
 	movl %r10d, -16(%rbp)
+	subq $8, %rsp
 	pushq %rdi
 	movl -16(%rbp), %edi
 	call _fib
+	addq $8, %rsp
 	movl %eax, -20(%rbp)
 	popq %rdi
 	movl %edi, -24(%rbp)
 	movl -24(%rbp), %r10d
 	subl $2, %r10d
 	movl %r10d, -24(%rbp)
+	subq $8, %rsp
 	pushq %rdi
 	movl -24(%rbp), %edi
 	call _fib
+	addq $8, %rsp
 	movl %eax, -28(%rbp)
 	popq %rdi
 	movl -20(%rbp), %r10d
@@ -67,9 +71,11 @@ _main:
 	movq %rsp, %rbp
 	subq $16, %rsp
 	movl $6, -4(%rbp)
+	subq $8, %rsp
 	pushq %rdi
 	movl -4(%rbp), %edi
 	call _fib
+	addq $8, %rsp
 	movl %eax, -8(%rbp)
 	popq %rdi
 	movl -8(%rbp), %eax

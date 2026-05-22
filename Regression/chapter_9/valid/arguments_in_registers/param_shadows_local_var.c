@@ -1,4 +1,5 @@
-   int f(int a);
+// EXPECT: 20
+int f(int a);
 
 int main() {
     int a = 10;

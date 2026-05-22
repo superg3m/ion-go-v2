@@ -1,3 +1,4 @@
+// EXPECT: 3
 int foo() {
     /* It's legal for a non-void function to not return a value.
      * If the caller tries to use the value of the function, the result is undefined.

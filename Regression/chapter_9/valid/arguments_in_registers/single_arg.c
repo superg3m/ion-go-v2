@@ -1,3 +1,4 @@
+// EXPECT: 6
 int twice(int x){
     return 2 * x;
 }

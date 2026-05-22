@@ -1,3 +1,4 @@
+// EXPECT: 1
 int foo(int a, int b);
 
 int main() {

@@ -105,15 +105,13 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 		stackArgumentCount := max(0, len(v.Arguments)-len(AssemblyAST.ArgumentRegisters))
 
 		var stackPadding int
-		if stackArgumentCount%2 == 1 {
+		if len(v.Arguments)%2 == 1 {
 			stackPadding = 8
 		} else {
 			stackPadding = 0
 		}
 
-		if stackPadding != 0 {
-			instructions = append(instructions, AssemblyAST.NewStackAllocateInstruction(stackPadding))
-		}
+		instructions = append(instructions, AssemblyAST.NewStackAllocateInstruction(stackPadding))
 
 		for i, arg := range v.Arguments {
 			if i >= len(AssemblyAST.ArgumentRegisters) {
@@ -128,18 +126,16 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 			}
 		}
 
-		if stackArgumentCount > 0 {
-			for i := len(AssemblyAST.ArgumentRegisters) + (stackArgumentCount - 1); i >= len(AssemblyAST.ArgumentRegisters); i -= 1 {
-				_, isVariable := v.Arguments[i].(*IR.Variable)
-				_, isConstant := v.Arguments[i].(*IR.Constant)
-				arg := newOperand(v.Arguments[i])
-				if isVariable || isConstant {
-					instructions = append(instructions, AssemblyAST.NewStackPushInstruction(arg))
-				} else {
-					panic(fmt.Sprintf("register not found in argument registers"))
-					// emit(Mov(assembly_arg, Reg(AX)))
-					//emit(Push(Reg(AX)))
-				}
+		for i := len(v.Arguments) - 1; i >= len(AssemblyAST.ArgumentRegisters); i -= 1 {
+			_, isVariable := v.Arguments[i].(*IR.Variable)
+			_, isConstant := v.Arguments[i].(*IR.Constant)
+			arg := newOperand(v.Arguments[i])
+			if isVariable || isConstant {
+				instructions = append(instructions, AssemblyAST.NewStackPushInstruction(arg))
+			} else {
+				panic(fmt.Sprintf("register not found in argument registers"))
+				// emit(Mov(assembly_arg, Reg(AX)))
+				//emit(Push(Reg(AX)))
 			}
 		}
 
@@ -155,9 +151,9 @@ func instructionsFromIR(inst IR.Instruction) []AssemblyAST.Instruction {
 			instructions = append(instructions, AssemblyAST.NewMoveInstruction(rax, destination))
 		}
 
-		for i, _ := range v.Arguments {
-			if i >= len(AssemblyAST.ArgumentRegisters) {
-				break
+		for i := len(AssemblyAST.ArgumentRegisters) - 1; i >= 0; i -= 1 {
+			if i >= len(v.Arguments) {
+				continue
 			}
 
 			if i < len(AssemblyAST.ArgumentRegisters) {

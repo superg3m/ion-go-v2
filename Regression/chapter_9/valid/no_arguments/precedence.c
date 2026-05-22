@@ -1,3 +1,4 @@
+// EXPECT: 0
 int three() {
     return 3;
 }

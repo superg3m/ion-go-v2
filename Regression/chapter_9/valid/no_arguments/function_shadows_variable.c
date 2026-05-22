@@ -1,3 +1,4 @@
+// EXPECT: 11
 int foo();
 
 int main() {

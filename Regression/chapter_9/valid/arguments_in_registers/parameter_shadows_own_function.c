@@ -1,3 +1,4 @@
+// EXPECT: 2
 int a(int a) {
     return a * 2;
 }

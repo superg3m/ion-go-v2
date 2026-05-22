@@ -1,7 +1,4 @@
-/* Make sure that calling another function doesn't clobber
- * arguments to the current function passed in the same registers
- */
-
+// EXPECT: 1
 int g(int w, int x, int y, int z) {
     if (w == 2 && x == 4 && y == 6 && z == 8)
         return 1;

@@ -1,3 +1,4 @@
+// EXPECT: 0
 int putchar(int c);
 
 int main() {

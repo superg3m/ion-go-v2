@@ -1,3 +1,4 @@
+// EXPECT: 21
 int bar() {
     return 9;
 }
