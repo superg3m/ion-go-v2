@@ -1,5 +1,14 @@
 CHANGELOG.txt
 
+----------- Version: 0.1.0 -----------
+- All tests pass, stack alignment seems to be right?
+
+----------- Version: 0.0.9 -----------
+- Functions, passing arguments, using code from the c runtime
+- fixed some typechecking bugs that caused more permissible
+    programs than should be allowed.
+- Hello World! (putchar)
+
 ----------- Version: 0.0.8 -----------
 - If else statements and worked on typechecking
 - for, while, break, continue
