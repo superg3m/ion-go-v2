@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -51,13 +52,24 @@ func emitInstructions(output string, assembly AssemblyAST.Program) error {
 }
 
 func buildExecutable(asmPath string, exePath string) error {
-	out, err := exec.Command(
-		"gcc",
-		"-arch", "x86_64",
-		asmPath,
-		"-o",
-		exePath,
-	).CombinedOutput()
+	var out []byte
+	var err error
+	if runtime.GOOS == "windows" {
+		out, err = exec.Command(
+			"gcc",
+			asmPath,
+			"-o",
+			exePath,
+		).CombinedOutput()
+	} else {
+		out, err = exec.Command(
+			"gcc",
+			"-arch", "x86_64",
+			asmPath,
+			"-o",
+			exePath,
+		).CombinedOutput()
+	}
 
 	if err != nil {
 		return fmt.Errorf("%v\n%s", err, string(out))
@@ -169,7 +181,7 @@ func runTest(path string) bool {
 }
 
 func main() {
-	dir := "./Regression"
+	dir := "./Test"
 
 	total := 0
 	passed := 0

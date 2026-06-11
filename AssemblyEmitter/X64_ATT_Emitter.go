@@ -3,6 +3,7 @@ package AssemblyEmitter
 import (
 	"fmt"
 	"ion/go/v2/AssemblyAST"
+	"runtime"
 )
 
 type ATTx64Emitter struct{}
@@ -101,7 +102,12 @@ func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 		}
 
 	case *AssemblyAST.InstructionFunctionCall:
-		instructions = []string{fmt.Sprintf("\tcall _%s", v.Identifier)}
+		maybeUnderscore := "_"
+		if runtime.GOOS == "windows" {
+			maybeUnderscore = ""
+		}
+
+		instructions = []string{fmt.Sprintf("\tcall %s%s", maybeUnderscore, v.Identifier)}
 	case *AssemblyAST.InstructionLabel:
 		instructions = []string{fmt.Sprintf(".L%s:", v.Identifier)}
 	case *AssemblyAST.InstructionStackPop:
@@ -125,9 +131,14 @@ func (e *ATTx64Emitter) EmitInstruction(inst AssemblyAST.Instruction) []string {
 }
 
 func (e *ATTx64Emitter) EmitFunctionDefinition(functionDefinition *AssemblyAST.FunctionDefinition) []string {
+	maybeUnderscore := "_"
+	if runtime.GOOS == "windows" {
+		maybeUnderscore = ""
+	}
+
 	instructions := []string{
-		fmt.Sprintf(".global _%s", functionDefinition.Tok.Lexeme),
-		fmt.Sprintf("_%s:", functionDefinition.Tok.Lexeme),
+		fmt.Sprintf(".global %s%s", maybeUnderscore, functionDefinition.Tok.Lexeme),
+		fmt.Sprintf("%s%s:", maybeUnderscore, functionDefinition.Tok.Lexeme),
 	}
 
 	instructions = append(instructions, EmitFunctionPrologue()...)
